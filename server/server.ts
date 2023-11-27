@@ -25,7 +25,7 @@ const seedQuery = fs.readFileSync(
 client.query(seedQuery, (err, res) => {
   console.log(err, res)
   console.log('Seeding Completed!')
-  client.end()
+  // client.end()
 })
 app.use('/', customerRoutes)
 app.listen(process.env.PORT, () => {
