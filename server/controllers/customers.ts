@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { queryAndRespond } from '../utils/getSQLData'
+import { queryAndRespond } from '../utils/getSqlData'
 
 export const getCustomers = async (req: Request, res: Response) => {
   if (req.query.id) {
