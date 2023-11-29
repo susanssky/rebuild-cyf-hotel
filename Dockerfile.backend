@@ -1,0 +1,11 @@
+FROM node
+
+# ENV SERVER_PORT=$SERVER_PORT \ 
+#   DATABASE_URL=$DATABASE_URL
+
+RUN mkdir -p /usr/src/cyf-hotel/server
+COPY ./server /usr/src/cyf-hotel/server
+WORKDIR /usr/src/cyf-hotel/server
+RUN npm install
+
+CMD ["npx","ts-node","server.ts"]

@@ -1,15 +1,15 @@
 type UserDataType = {
   id: number
   title: string
-  firstName: string
+  first_name: string
   surname: string
   email: string
 }
 
 export type BookingsType = UserDataType & {
   roomId: number
-  checkInDate: string
-  checkOutDate: string
+  check_in_date: string
+  check_out_date: string
   [key: string]: any
 }
 
@@ -19,8 +19,8 @@ export type ProfileDataType = UserDataType & {
 }
 export type InitialStateType = Omit<UserDataType, 'id'> & {
   roomId: string
-  checkInDate: string
-  checkOutDate: string
+  check_in_date: string
+  check_out_date: string
   firstNameError: string
   surnameError: string
   emailError: string

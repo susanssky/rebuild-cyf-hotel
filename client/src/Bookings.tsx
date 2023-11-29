@@ -30,6 +30,7 @@ const Bookings = () => {
         const data = await response.json()
         setIsError(null)
         setBookings(data)
+        console.log(data)
         setFilteredResults(data)
       } catch (err: any) {
         setIsError(err.message)

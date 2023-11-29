@@ -1,0 +1,10 @@
+FROM node
+
+# ENV VITE_SERVER_URL=$VITE_SERVER_URL
+RUN mkdir -p /usr/src/cyf-hotel/client
+COPY ./client /usr/src/cyf-hotel/client
+WORKDIR /usr/src/cyf-hotel/client
+RUN npm install
+
+
+CMD ["npm","run","dev"]

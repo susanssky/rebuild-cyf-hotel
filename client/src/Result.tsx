@@ -11,12 +11,12 @@ const Result = ({
   data: {
     id,
     title,
-    firstName,
+    first_name,
     surname,
     email,
-    roomId,
-    checkInDate,
-    checkOutDate,
+    room_id,
+    check_in_date,
+    check_out_date,
   },
   getId,
 }: PropsType) => {
@@ -32,13 +32,13 @@ const Result = ({
     >
       <th scope='row'>{id}</th>
       <td>{title}</td>
-      <td>{firstName}</td>
+      <td>{first_name}</td>
       <td>{surname}</td>
       <td>{email}</td>
-      <td>{roomId}</td>
-      <td>{checkInDate}</td>
-      <td>{checkOutDate}</td>
-      <td>{moment(checkOutDate).diff(moment(checkInDate), 'days')}</td>
+      <td>{room_id}</td>
+      <td>{check_in_date}</td>
+      <td>{check_out_date}</td>
+      <td>{moment(check_out_date).diff(moment(check_in_date), 'days')}</td>
       <td>
         <button className='btn btn-primary' onClick={() => getId(id)}>
           Show profile

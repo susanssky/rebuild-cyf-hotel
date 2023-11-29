@@ -1,13 +1,10 @@
-name: aws-deployment
-on: push
+name: Week2 Coursework
+# on: push
+on:
+  project:
+    types: deleted
 jobs:
-  # first-job:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
   s3-deployment:
-    # needs: ec2-deployment
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,7 +56,8 @@ jobs:
           PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
           HOSTNAME: ${{ secrets.EC2_HOST_NAME }}
           # Because the IP address of an EC2 instance changes when it is stopped and then started again,
-          # the value of a certain secret here must be manually updated. Therefore, this job fail because I did not enable the EC2 instance and update the secret value.
+          # the value of a certain secret here must be manually updated.
+          # Therefore, this job fail because I did not enable the EC2 instance and update the secret value.
           USER_NAME: ${{ secrets.EC2_USERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key

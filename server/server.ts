@@ -28,6 +28,6 @@ client.query(seedQuery, (err, res) => {
   // client.end()
 })
 app.use('/', customerRoutes)
-app.listen(process.env.PORT, () => {
-  console.log(`Server is listening on post ${process.env.PORT}`)
+app.listen(process.env.SERVER_PORT, () => {
+  console.log(`Server is listening on post ${process.env.SERVER_PORT}`)
 })

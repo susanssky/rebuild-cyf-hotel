@@ -1,0 +1,31 @@
+version: '3'
+services:
+  database:
+    image: susanssky/devops:cyf-hotel-database
+    restart: always
+    volumes:
+      - ./database-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  backend:
+    image: susanssky/devops:cyf-hotel-backend
+    restart: always
+    ports:
+      - 4000:4000
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+
+  frontend:
+    image: susanssky/devops:cyf-hotel-frontend
+    restart: always
+    ports:
+      - 3000:3000
+    environment:
+      - VITE_SERVER_URL=${VITE_SERVER_URL}
