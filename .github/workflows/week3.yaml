@@ -70,6 +70,6 @@ jobs:
           POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
           SERVER_PORT=${SERVER_PORT} \
           DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${{ steps.services-database-name.outputs.services }}:5432/${POSTGRES_DB}?sslmode=disable \
-          VITE_SERVER_URL=http://\$(ec2metadata --public-ipv4):${SERVER_PORT} docker-compose up -d
+          VITE_SERVER_URL=http://$(ec2metadata --public-ipv4):${SERVER_PORT} docker-compose up -d && \
           docker image prune -a -f
           EOF

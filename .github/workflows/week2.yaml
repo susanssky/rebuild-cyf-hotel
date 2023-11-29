@@ -34,20 +34,20 @@ jobs:
           aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
-      - name: Remove existing files from AWS S3
-        # Actually, this command could be removed
-        # because the next command below can replace the old ones directly.
-        run: |
-          aws s3 rm \
-          s3://${{ secrets.S3_BUCKET_NAME }} \
-          --recursive
-      - name: Copy files to the test website with the AWS CLI
-        run: |
-          aws s3 cp \
-          ./client/dist s3://${{ secrets.S3_BUCKET_NAME }} \
-          --recursive
+      - name: Sync frontend files to S3
+        run: aws s3 sync ./client/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+      # Thank you :)
+      # - name: Remove existing files from AWS S3
+      #   run: |
+      #     aws s3 rm \
+      #     s3://${{ secrets.S3_BUCKET_NAME }} \
+      #     --recursive
+      # - name: Copy files to the test website with the AWS CLI
+      #   run: |
+      #     aws s3 cp \
+      #     ./client/dist s3://${{ secrets.S3_BUCKET_NAME }} \
+      #     --recursive
 
-  #
   ec2-deployment:
     runs-on: ubuntu-latest
     steps:
@@ -62,5 +62,8 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} 'pm2 stop server && cd ${{ toJSON(github.event.repository.name) }} && git pull origin main && cd server && npm i && cd && pm2 start server'
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} 'pm2 stop server && \
+          cd ${{ toJSON(github.event.repository.name) }} && \
+          git pull origin main && cd server && \
+          npm i && cd && pm2 start server'
         # The above toJSON(github.event.repository.name) is to get the current repository name.
