@@ -100,5 +100,5 @@ jobs:
           DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOSTNAME}:5432/${POSTGRES_DB}?sslmode=disable \
           VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT} docker-compose up -d && \
           docker image prune -a -f"
-      - name: stop instances
-        run: aws ec2 stop-instances --instance-ids $INSTANCE_ID
+      # - name: stop instances
+      #   run: aws ec2 stop-instances --instance-ids $INSTANCE_ID
