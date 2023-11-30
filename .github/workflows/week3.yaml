@@ -45,7 +45,7 @@ jobs:
           SERVICES=$(yq eval '.services | keys | .[0]' docker-compose.yaml)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-      - name: login with ssh & pass the docker-compose.yaml to ec2 & docker-compose down && docker-compose up
+      - name: login with ssh & copy the docker-compose.yaml to ec2 & docker-compose down && docker-compose up
         env:
           HOSTNAME: ${{ secrets.EC2_HOST_NAME }}
           # Because the IP address of an EC2 instance changes when it is stopped and then started again,
@@ -63,7 +63,7 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
-          touch ~/.ssh/config
+          mkdir -p ~/.ssh
           cat >>~/.ssh/config << EOF
           Host ec2
             HostName $HOSTNAME
@@ -72,8 +72,8 @@ jobs:
             StrictHostKeyChecking no
           EOF
           scp ./docker-compose.yaml ec2:./
-          ssh ec2 'docker-compose down && \
-          POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+          ssh ec2 'POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} \
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
           SERVER_PORT=${SERVER_PORT} \
           DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${{ steps.services-database-name.outputs.services }}:5432/${POSTGRES_DB}?sslmode=disable \
           VITE_SERVER_URL=http://$(ec2metadata --public-ipv4):${SERVER_PORT} docker-compose up -d && \
