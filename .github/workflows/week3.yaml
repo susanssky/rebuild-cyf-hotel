@@ -1,35 +1,75 @@
 name: Week3 Coursewrok
 on: push
 jobs:
-  build-and-push:
+  build-image-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image:
-          - name: database
-            dockerfile: Dockerfile.database
-          - name: backend
-            dockerfile: Dockerfile.backend
-          - name: frontend
-            dockerfile: Dockerfile.frontend
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Docker Build
-        run: docker build -f ${{ matrix.image.dockerfile }} -t susanssky/devops:cyf-hotel-${{ matrix.image.name }} .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            database:
+              - 'database/seeding.sql'
+            backend:
+              - 'server/**'
+            frontend:
+              - 'client/**'
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
+        if: steps.filter.outputs.database == 'true' || steps.filter.outputs.frontend == 'true' || steps.filter.outputs.backend == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push Image
-        run: docker push susanssky/devops:cyf-hotel-${{ matrix.image.name }}
+      # run only if 'database' files were changed
+      - name: database tests
+        if: steps.filter.outputs.database == 'true'
+        run: |
+          docker build -f Dockerfile.database -t susanssky/devops:cyf-hotel-database .
+          docker push susanssky/devops:cyf-hotel-database
 
+      # run only if 'frontend' files were changed
+      - name: frontend tests
+        if: steps.filter.outputs.frontend == 'true'
+        run: |
+          docker build -f Dockerfile.frontend -t susanssky/devops:cyf-hotel-frontend .
+          docker push susanssky/devops:cyf-hotel-frontend
+
+      # run if 'backend' or 'frontend' files were changed
+      - name: backend tests
+        if: steps.filter.outputs.backend == 'true'
+        run: |
+          docker build -f Dockerfile.backend -t susanssky/devops:cyf-hotel-backend .
+          docker push susanssky/devops:cyf-hotel-backend
+  # ----------------------------------------------------
+  # Although matrix is also not bad, but the disadvantage is that once any file in the three folders is (minor) modified, the 3 docker images must be built and pushed to docker hub for the three folders, which is time-consuming.
+  # build-image-and-push:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       image: [database, backend, frontend]
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Docker Build
+  #       run: docker build -f Dockerfile.${{ matrix.image }} -t susanssky/devops:cyf-hotel-${{ matrix.image }} .
+
+  #     - name: Login to Docker Hub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  #     - name: Push Image
+  #       run: docker push susanssky/devops:cyf-hotel-${{ matrix.image }}
+  # ----------------------------------------------------
   ec2-deployment:
-    needs: build-and-push
+    needs: build-image-and-push
     runs-on: ubuntu-latest
     env:
       INSTANCE_ID: ${{ secrets.INSTANCE_ID }}
@@ -100,5 +140,6 @@ jobs:
           DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOSTNAME}:5432/${POSTGRES_DB}?sslmode=disable \
           VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT} docker-compose up -d && \
           docker image prune -a -f"
-      # - name: stop instances
-      #   run: aws ec2 stop-instances --instance-ids $INSTANCE_ID
+
+# - name: stop instances
+#   run: aws ec2 stop-instances --instance-ids $INSTANCE_ID
