@@ -31,6 +31,15 @@ jobs:
   ec2-deployment:
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      INSTANCE_ID: ${{ secrets.INSTANCE_ID }}
+      PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
+      USER_NAME: ${{ secrets.EC2_USERNAME }}
+
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      SERVER_PORT: 4000
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,36 +54,51 @@ jobs:
           SERVICES=$(yq eval '.services | keys | .[0]' docker-compose.yaml)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-      - name: login with ssh & copy the docker-compose.yaml to ec2 & docker-compose down && docker-compose up
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - name: extract ec2 state
+        id: ec2-state
+        run: |
+          EC2_STATE=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query 'Reservations[].Instances[].State.Name' --output text)
+          echo "ec2_state=$EC2_STATE" >> $GITHUB_OUTPUT
+      - name: If EC2 is running, don't start instances & wait until the instance is ok
+        if: ${{ steps.ec2-state.outputs.ec2_state }} != 'running'
+        run: |
+          aws ec2 start-instances --instance-ids $INSTANCE_ID
+          aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+
+      - name: Get running instance public ip
+        id: instance-public-ip
+        run: |
+          INSTANCE_PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_OUTPUT
+
+      - name: Login with ssh & copy the docker-compose.yaml to ec2 & docker-compose up
         env:
-          HOSTNAME: ${{ secrets.EC2_HOST_NAME }}
-          # Because the IP address of an EC2 instance changes when it is stopped and then started again,
-          # the value of a certain secret here must be manually updated. Therefore,
-          # this job fail because I did not enable the EC2 instance and update the secret value.
-
-          PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
-          USER_NAME: ${{ secrets.EC2_USERNAME }}
-
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          SERVER_PORT: 4000
-
+          EC2_IP: ${{ steps.instance-public-ip.outputs.instance_public_ip }}
+          DATABASE_HOSTNAME: ${{ steps.services-database-name.outputs.services }}
         run: |
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
           mkdir -p ~/.ssh
           cat >>~/.ssh/config << EOF
           Host ec2
-            HostName $HOSTNAME
+            HostName $EC2_IP
             User $USER_NAME
             IdentityFile private_key
             StrictHostKeyChecking no
           EOF
           scp ./docker-compose.yaml ec2:./
-          ssh ec2 'POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} \
+          ssh ec2 "POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} \
+          docker-compose pull && \
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
           SERVER_PORT=${SERVER_PORT} \
-          DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${{ steps.services-database-name.outputs.services }}:5432/${POSTGRES_DB}?sslmode=disable \
-          VITE_SERVER_URL=http://$(ec2metadata --public-ipv4):${SERVER_PORT} docker-compose up -d && \
-          docker image prune -a -f'
+          DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOSTNAME}:5432/${POSTGRES_DB}?sslmode=disable \
+          VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT} docker-compose up -d && \
+          docker image prune -a -f"
+      - name: stop instances
+        run: aws ec2 stop-instances --instance-ids $INSTANCE_ID
