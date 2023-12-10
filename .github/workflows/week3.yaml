@@ -1,5 +1,8 @@
 name: Week3 Coursewrok
-on: push
+# on: push
+on:
+  project:
+    types: deleted
 jobs:
   build-image-and-push:
     runs-on: ubuntu-latest
