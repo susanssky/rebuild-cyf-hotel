@@ -135,11 +135,11 @@ jobs:
           EOF
           scp ./docker-compose-week3.yaml ec2:./
           ssh ec2 "POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} \
-          docker-compose pull && \
+          docker-compose -f docker-compose-week3.yaml pull && \
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
           SERVER_PORT=${SERVER_PORT} \
           DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOSTNAME}:5432/${POSTGRES_DB}?sslmode=disable \
-          VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT} docker-compose up -d && \
+          VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT} docker-compose -f docker-compose-week3.yaml up -d && \
           docker image prune -a -f"
 
 # - name: stop instances
