@@ -1,4 +1,4 @@
-type UserDataType = {
+export type UserDataType = {
   id: number
   title: string
   first_name: string
@@ -10,7 +10,7 @@ export type BookingsType = UserDataType & {
   roomId: number
   check_in_date: string
   check_out_date: string
-  [key: string]: any
+  [key: string]: string | number
 }
 
 export type ProfileDataType = UserDataType & {

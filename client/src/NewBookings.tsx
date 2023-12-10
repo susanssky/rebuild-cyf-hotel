@@ -21,18 +21,23 @@ type ActionType =
 const NewBookings = ({ newBookings, bookings }: PropsType) => {
   const initialState: InitialStateType = {
     title: '',
-    firstName: '',
+    first_name: '',
     surname: '',
     email: '',
     roomId: '',
-    checkInDate: '',
-    checkOutDate: '',
+    check_in_date: '',
+    check_out_date: '',
     firstNameError: '',
     surnameError: '',
     emailError: '',
     roomIdError: '',
     titleError: '',
   }
+  let checkIfOneAtSign,
+    checkIfLeastOneFullStop,
+    checkIfNumber,
+    checkIfBetweenZeroToHundred
+
   const reducer = (state: InitialStateType, action: ActionType) => {
     switch (action.type) {
       case 'handleInput':
@@ -43,7 +48,7 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
       case 'checkFirstName':
         return {
           ...state,
-          firstNameError: state.firstName.trim()
+          firstNameError: state.first_name.trim()
             ? 'OK'
             : 'first name must not be empty',
         }
@@ -55,8 +60,8 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
             : 'last name must not be empty',
         }
       case 'checkEmail':
-        const checkIfOneAtSign = state.email.split('@').length === 2
-        const checkIfLeastOneFullStop =
+        checkIfOneAtSign = state.email.split('@').length === 2
+        checkIfLeastOneFullStop =
           checkIfOneAtSign && state.email.split('@')[1].includes('.')
         return {
           ...state,
@@ -67,8 +72,8 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
             : 'OK',
         }
       case 'checkRoomId':
-        const checkIfNumber = !isNaN(Number(state.roomId))
-        const checkIfBetweenZeroToHundred =
+        checkIfNumber = !isNaN(Number(state.roomId))
+        checkIfBetweenZeroToHundred =
           Number(state.roomId) >= 0 && Number(state.roomId) <= 100
         return {
           ...state,
@@ -108,14 +113,14 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
 
     if (isFormValid) {
       const {
-        firstNameError,
-        surnameError,
-        emailError,
-        roomIdError,
-        titleError,
+        // firstNameError,
+        // surnameError,
+        // emailError,
+        // roomIdError,
+        // titleError,
         roomId,
-        checkInDate,
-        checkOutDate,
+        check_in_date,
+        check_out_date,
         ...rest
       } = state
       const formatDate = (date: Date): string => date.toISOString().slice(0, 10)
@@ -123,8 +128,8 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
         ...rest,
         id: bookings.length + 1,
         roomId: Number(roomId),
-        checkInDate: formatDate(new Date(checkInDate)),
-        checkOutDate: formatDate(new Date(checkOutDate)),
+        check_in_date: formatDate(new Date(check_in_date)),
+        check_out_date: formatDate(new Date(check_out_date)),
       }
 
       newBookings(newBooking)
@@ -221,9 +226,9 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
           className='form-control'
           id='validationCustom03'
           selected={
-            typeof state.checkInDate === 'string'
+            typeof state.check_in_date === 'string'
               ? undefined
-              : state.checkInDate
+              : state.check_in_date
           }
           onChange={(date: Date) =>
             handleTextChange({
@@ -237,9 +242,9 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
           selectsStart
           required
           startDate={
-            typeof state.checkInDate === 'string'
+            typeof state.check_in_date === 'string'
               ? undefined
-              : state.checkInDate
+              : state.check_in_date
           }
           minDate={new Date()}
         />
@@ -254,9 +259,9 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
           className='form-control'
           id='validationCustom04'
           selected={
-            typeof state.checkOutDate === 'string'
+            typeof state.check_out_date === 'string'
               ? undefined
-              : state.checkOutDate
+              : state.check_out_date
           }
           onChange={(date: Date) =>
             handleTextChange({
@@ -270,9 +275,9 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
           selectsEnd
           required
           endDate={
-            typeof state.checkOutDate === 'string'
+            typeof state.check_out_date === 'string'
               ? undefined
-              : state.checkOutDate
+              : state.check_out_date
           }
           minDate={new Date(new Date().getTime() + 24 * 60 * 60 * 1000)}
         />
@@ -287,7 +292,7 @@ const NewBookings = ({ newBookings, bookings }: PropsType) => {
           className='form-control'
           id='validationCustom05'
           required
-          value={state.firstName}
+          value={state.first_name}
           onChange={(e) => handleTextChange(e)}
         />
         <div

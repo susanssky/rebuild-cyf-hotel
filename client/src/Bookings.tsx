@@ -14,7 +14,9 @@ const Bookings = () => {
     if (searchVal !== '') {
       const keys = ['firstName', 'surname']
       const filteredData = bookings.filter((booking) =>
-        keys.some((key) => booking[key].toLowerCase().includes(searchVal))
+        keys.some((key) =>
+          (booking[key] as string).toLowerCase().includes(searchVal)
+        )
       )
       setFilteredResults(filteredData)
     } else if (searchVal === '') {
@@ -32,6 +34,7 @@ const Bookings = () => {
         setBookings(data)
         console.log(data)
         setFilteredResults(data)
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setIsError(err.message)
         console.error(err)

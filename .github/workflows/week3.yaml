@@ -25,21 +25,21 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # run only if 'database' files were changed
-      - name: database tests
+      - name: push database image
         if: steps.filter.outputs.database == 'true'
         run: |
           docker build -f Dockerfile.database -t susanssky/devops:cyf-hotel-database .
           docker push susanssky/devops:cyf-hotel-database
 
       # run only if 'frontend' files were changed
-      - name: frontend tests
+      - name: push frontend image
         if: steps.filter.outputs.frontend == 'true'
         run: |
           docker build -f Dockerfile.frontend -t susanssky/devops:cyf-hotel-frontend .
           docker push susanssky/devops:cyf-hotel-frontend
 
       # run if 'backend' or 'frontend' files were changed
-      - name: backend tests
+      - name: push backend image
         if: steps.filter.outputs.backend == 'true'
         run: |
           docker build -f Dockerfile.backend -t susanssky/devops:cyf-hotel-backend .
@@ -83,7 +83,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install yq for grab services database name in docker-compose.yaml
+      - name: Install yq for grab services database name in docker-compose-week3.yaml
         run: |
           wget https://github.com/mikefarah/yq/releases/download/v4.12.1/yq_linux_amd64 -O /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
@@ -91,7 +91,7 @@ jobs:
       - name: Extract Services Data Name
         id: services-database-name
         run: |
-          SERVICES=$(yq eval '.services | keys | .[0]' docker-compose.yaml)
+          SERVICES=$(yq eval '.services | keys | .[0]' docker-compose-week3.yaml)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
@@ -117,7 +117,8 @@ jobs:
           INSTANCE_PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
           echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_OUTPUT
 
-      - name: Login with ssh & copy the docker-compose.yaml to ec2 & docker-compose up
+      - name: Login with ssh & copy the docker-compose-week3.yaml to ec2 & docker-compose up
+        # This EC2 instance must have Docker installed in advance.
         env:
           EC2_IP: ${{ steps.instance-public-ip.outputs.instance_public_ip }}
           DATABASE_HOSTNAME: ${{ steps.services-database-name.outputs.services }}
@@ -132,7 +133,7 @@ jobs:
             IdentityFile private_key
             StrictHostKeyChecking no
           EOF
-          scp ./docker-compose.yaml ec2:./
+          scp ./docker-compose-week3.yaml ec2:./
           ssh ec2 "POSTGRES_DB=${POSTGRES_DB} POSTGRES_USER=${POSTGRES_USER} \
           docker-compose pull && \
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \

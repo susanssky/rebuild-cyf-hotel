@@ -29,5 +29,5 @@ client.connect()
 // })
 app.use('/', customerRoutes)
 app.listen(process.env.SERVER_PORT, () => {
-  console.log(`Server is listening on post ${process.env.SERVER_PORT}`)
+  console.log(`Server is listening on port ${process.env.SERVER_PORT}`)
 })

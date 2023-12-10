@@ -7,35 +7,19 @@ jobs:
   s3-deployment:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: PWD
-        run: pwd
-      - name: Install packages, test and build artifacts
+      - uses: actions/checkout@v4
+      - name: Install packages and build
+        working-directory: ./client
         run: |
-          cd client
           npm ci
           npm run build
-      # - name: Upload artifacts
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: static-website
-      #     path: dist
-      # - name: Download artifacts
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: static-website
-      #     path: dist
-      - name: PWD
-        run: pwd
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
       - name: Sync frontend files to S3
-        run: aws s3 sync ./client/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
       # Thank you :)
       # - name: Remove existing files from AWS S3
       #   run: |
@@ -45,7 +29,7 @@ jobs:
       # - name: Copy files to the test website with the AWS CLI
       #   run: |
       #     aws s3 cp \
-      #     ./client/dist s3://${{ secrets.S3_BUCKET_NAME }} \
+      #     ./dist s3://${{ secrets.S3_BUCKET_NAME }} \
       #     --recursive
 
   ec2-deployment:
@@ -58,6 +42,9 @@ jobs:
           # Because the IP address of an EC2 instance changes when it is stopped and then started again,
           # the value of a certain secret here must be manually updated.
           # Therefore, this job fail because I did not enable the EC2 instance and update the secret value.
+
+          # In addition, this EC2 instance must have PM2 pre-installed and
+          # the entire app's backend folder must have been git cloned.
           USER_NAME: ${{ secrets.EC2_USERNAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key
