@@ -7,6 +7,7 @@ import fs from 'fs'
 import cors from 'cors'
 import path from 'path'
 import customerRoutes from './routes/customers'
+import awsRoutes from './routes/aws'
 dotenv.config({ path: path.resolve(__dirname, './.env') })
 
 const app: Express = express()
@@ -28,6 +29,7 @@ client.connect()
 //   // client.end()
 // })
 app.use('/', customerRoutes)
+app.use('/aws', awsRoutes)
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`Server is listening on port ${process.env.SERVER_PORT}`)
 })

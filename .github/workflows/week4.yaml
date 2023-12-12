@@ -1,5 +1,8 @@
 name: Week4 Coursewrok
-on: push
+# on: push
+on:
+  project:
+    types: deleted
 jobs:
   run-terraform-rds-ec2:
     runs-on: ubuntu-latest
