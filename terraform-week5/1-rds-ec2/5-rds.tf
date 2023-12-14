@@ -5,9 +5,8 @@ resource "aws_db_subnet_group" "subnet-group" {
     Name = "${var.week_prefix}-subnet-group"
   }
 }
-
 resource "aws_db_parameter_group" "parameter-group" {
-  name   = "week4-rds-parameter-group"
+  name   = "${var.week_prefix}-rds-parameter-group"
   family = "postgres15"
   tags = {
     Name = "${var.week_prefix}-rds-parameter-group"
@@ -18,7 +17,7 @@ resource "aws_db_instance" "database" {
   db_subnet_group_name     = aws_db_subnet_group.subnet-group.id //If unspecified, will be created in the default VPC, or in EC2 Classic
   vpc_security_group_ids   = [aws_security_group.sg.id]
   allocated_storage        = 20
-  identifier               = "cyf-hotel-customers-db-cloud-week4"
+  identifier               = "${var.week_prefix}-hotel-db"
   engine                   = "postgres"
   engine_version           = 15.4
   instance_class           = "db.t3.micro"
@@ -42,6 +41,3 @@ resource "aws_db_instance" "database" {
 # output "rds_endpoint" {
 #   value = data.aws_db_instance.current_rds.endpoint
 # }
-output "rds_endpoint" {
-  value = aws_db_instance.database.endpoint
-}

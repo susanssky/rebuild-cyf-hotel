@@ -1,6 +1,6 @@
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "cyf-cloud-week4"
+  bucket = "${var.week_prefix}-hotel"
   tags = {
     Name = "${var.week_prefix}-s3"
   }
@@ -45,7 +45,7 @@ resource "aws_s3_bucket_policy" "policy" {
 }
 module "template_files" {
   source   = "hashicorp/dir/template"
-  base_dir = "../../client/dist"
+  base_dir = "../../client/build"
 }
 
 resource "aws_s3_object" "frontend-object" {

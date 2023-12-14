@@ -1,6 +1,6 @@
 
 variable "week_prefix" {
-  default = "cyf-cloud-week4"
+  default = "cloud-week5"
 }
 variable "anyone_access_ip" {
   default = "0.0.0.0/0"

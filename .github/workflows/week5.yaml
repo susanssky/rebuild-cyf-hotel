@@ -1,0 +1,172 @@
+name: Week5 Coursewrok
+on: push
+jobs:
+  RDS_EC2:
+    runs-on: ubuntu-latest
+    outputs:
+      rds-endpoint: ${{ steps.rds-ec2-outputs.outputs.RDS_ENDPOINT }}
+      ec2-ip: ${{ steps.rds-ec2-outputs.outputs.EC2_IP }}
+      ec2-id: ${{ steps.rds-ec2-outputs.outputs.EC2_ID }}
+      key-name: ${{ steps.rds-ec2-outputs.outputs.KEY_NAME }}
+      security-group-id: ${{ steps.rds-ec2-outputs.outputs.SG_ID }}
+      vpc-id: ${{ steps.rds-ec2-outputs.outputs.VPC_ID }}
+      subnet1-id: ${{ steps.rds-ec2-outputs.outputs.SUBNET1_ID }}
+      subnet2-id: ${{ steps.rds-ec2-outputs.outputs.SUBNET2_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # for get the terraform output value
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - name: Terraform command
+        working-directory: ./terraform-week5/1-rds-ec2
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "database_username=${{ secrets.POSTGRES_USER }}" -var "database_password=${{ secrets.POSTGRES_PASSWORD }}" -var "ec2_public_key=${{ secrets.AWS_EC2_PUBLIC_KEY }}" -var "docker_pw=${{ secrets.DOCKER_PW }}"
+      - name: save the outputs value from tf to the outputs in this job
+        id: rds-ec2-outputs
+        working-directory: ./terraform-week5/1-rds-ec2
+        run: |
+          echo "RDS_ENDPOINT=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+          echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+          echo "EC2_ID=$(terraform output -raw ec2_id)" >> $GITHUB_OUTPUT
+          echo "KEY_NAME=$(terraform output -raw key_name)" >> $GITHUB_OUTPUT
+          echo "SG_ID=$(terraform output -raw security_group_id)" >> $GITHUB_OUTPUT
+          echo "VPC_ID=$(terraform output -raw vpc_id)" >> $GITHUB_OUTPUT
+          echo "SUBNET1_ID=$(terraform output -raw subnet1_id)" >> $GITHUB_OUTPUT
+          echo "SUBNET2_ID=$(terraform output -raw subnet2_id)" >> $GITHUB_OUTPUT
+
+  set-up-database:
+    needs: RDS_EC2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import SQL Data
+        working-directory: ./database
+        env:
+          DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
+        run: psql "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql
+  set-up-backend:
+    needs: [RDS_EC2, set-up-database]
+    runs-on: ubuntu-latest
+    env:
+      EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
+      EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
+
+      PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
+      USER_NAME: ${{ secrets.EC2_USERNAME }}
+
+      RDS_ENDPOINT: ${{  needs.RDS_EC2.outputs.rds-endpoint }}
+      RDS_USER: ${{ secrets.POSTGRES_USER }}
+      RDS_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      SERVER_PORT: 4000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        # if: steps.filter.outputs.backend == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: push backend image to hub if there are any updadte in backend
+        # if: steps.filter.outputs.backend == 'true'
+        run: |
+          docker build -f Dockerfile.backend -t susanssky/devops:cyf-hotel-backend .
+          docker push susanssky/devops:cyf-hotel-backend
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - name: Login with ssh & copy the docker-compose-week4.yaml to ec2 & docker-compose up
+        run: |
+          echo "$PRIVATE_KEY" > private_key
+          chmod 600 private_key
+          mkdir -p ~/.ssh
+          cat >>~/.ssh/config << EOF
+          Host ec2
+            HostName $EC2_IP
+            User $USER_NAME
+            IdentityFile private_key
+            StrictHostKeyChecking no
+          EOF
+          scp "./docker-compose-week4.yaml" ec2:./
+          ssh ec2 "echo "SERVER_PORT=${SERVER_PORT}" > .env && \
+          echo "DATABASE_URL=postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_ENDPOINT}/" >> .env && \
+          sudo docker login && \
+          sudo docker-compose -f docker-compose-week4.yaml pull && \
+          sudo docker-compose -f docker-compose-week4.yaml up -d && sudo docker image prune -a -f"
+
+  AS_LB_CW:
+    runs-on: ubuntu-latest
+    needs: [RDS_EC2, set-up-backend]
+    env:
+      EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
+      KEY_NAME: ${{ needs.RDS_EC2.outputs.key-name }}
+      SG_ID: ${{ needs.RDS_EC2.outputs.security-group-id }}
+      VPC_ID: ${{ needs.RDS_EC2.outputs.vpc-id }}
+      SUBNET1_ID: ${{ needs.RDS_EC2.outputs.subnet1-id }}
+      SUBNET2_ID: ${{ needs.RDS_EC2.outputs.subnet2-id }}
+    outputs:
+      server_url: ${{ steps.as-lb-cw-outputs.outputs.LB_DNS_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # for get the terraform output value
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - name: Terraform command
+        working-directory: ./terraform-week5/2-as-lb-cw
+        run: |
+          echo $SUBNET1_ID
+          echo $SUBNET2_ID
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow_aws_security_group_id=$SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_subnet1_id=$SUBNET1_ID" -var "from_previous_workflow_subnet2_id=$SUBNET2_ID"
+      # - name: stop instances
+      #   run: aws ec2 stop-instances --instance-ids $EC2_ID
+      - name: save the outputs value from tf to the outputs in this job
+        id: as-lb-cw-outputs
+        working-directory: ./terraform-week5/2-as-lb-cw
+        run: echo "LB_DNS_NAME=$(terraform output -raw lb-dns-name)" >> $GITHUB_OUTPUT
+
+  set-up-frontend-and-run-tf:
+    needs: [AS_LB_CW]
+    runs-on: ubuntu-latest
+    env:
+      SERVER_URL: ${{ needs.AS_LB_CW.outputs.server_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Create env file'
+        working-directory: ./client
+        run: |
+          echo "VITE_SERVER_URL=http://${SERVER_URL}" > .env
+          cat .env
+      - name: build static frontend website
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - name: Terraform command
+        working-directory: ./terraform-week5/3-s3
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve

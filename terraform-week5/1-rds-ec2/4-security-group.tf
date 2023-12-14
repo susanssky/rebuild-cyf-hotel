@@ -35,3 +35,4 @@ resource "aws_security_group" "sg" {
     Name = "${var.week_prefix}-sg"
   }
 }
+

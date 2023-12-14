@@ -15,8 +15,6 @@ resource "aws_subnet" "subnet2" {
   }
 }
 
-
-
 resource "aws_route_table" "route-table" {
   vpc_id = aws_vpc.vpc.id
   route {

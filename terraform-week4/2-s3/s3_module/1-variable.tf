@@ -1,3 +1,3 @@
-variable "env_prefix" {
-    default = "cyf-cloud-week4"
+variable "week_prefix" {
+  default = "cyf-cloud-week4"
 }
