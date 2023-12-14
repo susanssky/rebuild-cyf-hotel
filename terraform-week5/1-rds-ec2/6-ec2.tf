@@ -13,7 +13,6 @@ resource "aws_instance" "backend" {
   associate_public_ip_address = true
   user_data                   = <<EOF
 #!/bin/bash
-sudo echo "${var.docker_pw}" > /home/ubuntu/docker.txt
 sudo apt update
 sudo apt install stress -y
 sudo apt install docker.io -y
@@ -24,7 +23,7 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 sudo chmod 666 /var/run/docker.sock
-sudo docker login --username susanssky --password-stdin < /home/ubuntu/docker.txt
+echo "${var.docker_pw}" | sudo docker login --username susanssky --password-stdin
 EOF
 
   tags = {
