@@ -13,6 +13,7 @@ jobs:
       rds-endpoint: ${{ steps.tf-outputs.outputs.RDS_ENDPOINT }}
       ec2-ip: ${{ steps.tf-outputs.outputs.EC2_IP }}
       ec2-id: ${{ steps.tf-outputs.outputs.EC2_ID }}
+      ec2_private_key: ${{ steps.tf-outputs.outputs.EC2_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -27,7 +28,7 @@ jobs:
         run: |
           terraform init
           terraform fmt -check
-          terraform apply -auto-approve -var "database_username=${{ secrets.POSTGRES_USER }}" -var "database_password=${{ secrets.POSTGRES_PASSWORD }}" -var "ec2_public_key=${{ secrets.AWS_EC2_PUBLIC_KEY }}" -var "docker_pw=${{ secrets.DOCKER_PW }}"
+          terraform apply -auto-approve -var "database_username=${{ secrets.POSTGRES_USER }}" -var "database_password=${{ secrets.POSTGRES_PASSWORD }}" -var "docker_pw=${{ secrets.DOCKER_PW }}"
       - name: save the outputs value from tf to the outputs in this job
         id: tf-outputs
         working-directory: ./terraform-week4/1-rds-ec2
@@ -35,6 +36,7 @@ jobs:
           echo "RDS_ENDPOINT=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
           echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
           echo "EC2_ID=$(terraform output -raw ec2_id)" >> $GITHUB_OUTPUT
+          echo "EC2_PRIVATE_KEY=$(terraform output -raw ec2_private_key)" >> $GITHUB_OUTPUT
 
   set-up-database-backend:
     needs: [RDS_EC2]
@@ -43,8 +45,7 @@ jobs:
       DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
-
-      PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
+      PRIVATE_KEY: ${{ needs.RDS_EC2.outputs.ec2_private_key }}
       USER_NAME: ${{ secrets.EC2_USERNAME }}
 
       RDS_ENDPOINT: ${{  needs.RDS_EC2.outputs.rds-endpoint }}

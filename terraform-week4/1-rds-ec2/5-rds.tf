@@ -1,5 +1,6 @@
 resource "aws_db_subnet_group" "subnet-group" {
   # for RDS
+  name       = "${var.week_prefix}-rds-subnet-group"
   subnet_ids = [for id in aws_subnet.private-subnet[*].id : id]
   tags = {
     Name = "${var.week_prefix}-rds-subnet-group"

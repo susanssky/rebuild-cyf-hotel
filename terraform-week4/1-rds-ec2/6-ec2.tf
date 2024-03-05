@@ -1,7 +1,12 @@
 
+resource "tls_private_key" "create-key-pair-for-ec2" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "aws_key_pair" "ssh-key" {
   key_name   = "tf-aws-ec2-key"
-  public_key = var.ec2_public_key
+  public_key = tls_private_key.create-key-pair-for-ec2.public_key_openssh
 }
 resource "aws_instance" "backend" {
   ami                         = "ami-0505148b3591e4c07" //hard code because "data" can not filter free tier ami Ubuntu Server 22.04 LTS (HVM), SSD Volume Type (64-bit (x86))

@@ -1,8 +1,15 @@
 name: Week5 Coursewrok
-on: push
+# on: push
+permissions:
+  id-token: write
+  contents: read
+on:
+  project:
+    types: deleted
 jobs:
   RDS_EC2:
     runs-on: ubuntu-latest
+
     outputs:
       rds-endpoint: ${{ steps.rds-ec2-outputs.outputs.RDS_ENDPOINT }}
       ec2-ip: ${{ steps.rds-ec2-outputs.outputs.EC2_IP }}
@@ -19,8 +26,7 @@ jobs:
           terraform_wrapper: false # for get the terraform output value
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: Terraform command
         working-directory: ./terraform-week5/1-rds-ec2
@@ -80,8 +86,7 @@ jobs:
           docker push susanssky/devops:cyf-hotel-backend
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: Login with ssh & copy the docker-compose-week4.yaml to ec2 & docker-compose up
         run: |
@@ -102,71 +107,71 @@ jobs:
           sudo docker-compose -f docker-compose-week4.yaml pull && \
           sudo docker-compose -f docker-compose-week4.yaml up -d && sudo docker image prune -a -f"
 
-  AS_LB_CW:
-    runs-on: ubuntu-latest
-    needs: [RDS_EC2, set-up-backend]
-    env:
-      EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
-      KEY_NAME: ${{ needs.RDS_EC2.outputs.key-name }}
-      SG_ID: ${{ needs.RDS_EC2.outputs.security-group-id }}
-      VPC_ID: ${{ needs.RDS_EC2.outputs.vpc-id }}
-      SUBNET1_ID: ${{ needs.RDS_EC2.outputs.subnet1-id }}
-      SUBNET2_ID: ${{ needs.RDS_EC2.outputs.subnet2-id }}
-    outputs:
-      server_url: ${{ steps.as-lb-cw-outputs.outputs.LB_DNS_NAME }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false # for get the terraform output value
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      - name: Terraform command
-        working-directory: ./terraform-week5/2-as-lb-cw
-        run: |
-          echo $SUBNET1_ID
-          echo $SUBNET2_ID
-          terraform init
-          terraform fmt -check
-          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow_aws_security_group_id=$SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_subnet1_id=$SUBNET1_ID" -var "from_previous_workflow_subnet2_id=$SUBNET2_ID"
-      # - name: stop instances
-      #   run: aws ec2 stop-instances --instance-ids $EC2_ID
-      - name: save the outputs value from tf to the outputs in this job
-        id: as-lb-cw-outputs
-        working-directory: ./terraform-week5/2-as-lb-cw
-        run: echo "LB_DNS_NAME=$(terraform output -raw lb-dns-name)" >> $GITHUB_OUTPUT
+  # AS_LB_CW:
+  #   runs-on: ubuntu-latest
+  #   needs: [RDS_EC2, set-up-backend]
+  #   env:
+  #     EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
+  #     KEY_NAME: ${{ needs.RDS_EC2.outputs.key-name }}
+  #     SG_ID: ${{ needs.RDS_EC2.outputs.security-group-id }}
+  #     VPC_ID: ${{ needs.RDS_EC2.outputs.vpc-id }}
+  #     SUBNET1_ID: ${{ needs.RDS_EC2.outputs.subnet1-id }}
+  #     SUBNET2_ID: ${{ needs.RDS_EC2.outputs.subnet2-id }}
+  #   outputs:
+  #     server_url: ${{ steps.as-lb-cw-outputs.outputs.LB_DNS_NAME }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: hashicorp/setup-terraform@v3
+  #       with:
+  #         terraform_wrapper: false # for get the terraform output value
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-2
+  #     - name: Terraform command
+  #       working-directory: ./terraform-week5/2-as-lb-cw
+  #       run: |
+  #         echo $SUBNET1_ID
+  #         echo $SUBNET2_ID
+  #         terraform init
+  #         terraform fmt -check
+  #         terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow_aws_security_group_id=$SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_subnet1_id=$SUBNET1_ID" -var "from_previous_workflow_subnet2_id=$SUBNET2_ID"
+  #     # - name: stop instances
+  #     #   run: aws ec2 stop-instances --instance-ids $EC2_ID
+  #     - name: save the outputs value from tf to the outputs in this job
+  #       id: as-lb-cw-outputs
+  #       working-directory: ./terraform-week5/2-as-lb-cw
+  #       run: echo "LB_DNS_NAME=$(terraform output -raw lb-dns-name)" >> $GITHUB_OUTPUT
 
-  set-up-frontend-and-run-tf:
-    needs: [AS_LB_CW]
-    runs-on: ubuntu-latest
-    env:
-      SERVER_URL: ${{ needs.AS_LB_CW.outputs.server_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: 'Create env file'
-        working-directory: ./client
-        run: |
-          echo "VITE_SERVER_URL=http://${SERVER_URL}" > .env
-          cat .env
-      - name: build static frontend website
-        working-directory: ./client
-        run: |
-          npm ci
-          npm run build
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      - name: Terraform command
-        working-directory: ./terraform-week5/3-s3
-        run: |
-          terraform init
-          terraform fmt -check
-          terraform apply -auto-approve
+  # set-up-frontend-and-run-tf:
+  # needs: [AS_LB_CW]
+  # runs-on: ubuntu-latest
+  # env:
+  #   SERVER_URL: ${{ needs.AS_LB_CW.outputs.server_url }}
+  # steps:
+  #   - uses: actions/checkout@v4
+  #   - name: 'Create env file'
+  #     working-directory: ./client
+  #     run: |
+  #       echo "VITE_SERVER_URL=http://${SERVER_URL}" > .env
+  #       cat .env
+  #   - name: build static frontend website
+  #     working-directory: ./client
+  #     run: |
+  #       npm ci
+  #       npm run build
+  #   - uses: hashicorp/setup-terraform@v3
+  #     with:
+  #       terraform_wrapper: false
+  #   - uses: aws-actions/configure-aws-credentials@v4
+  #     with:
+  #       aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
+  #       aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+  #       aws-region: eu-west-2
+  #   - name: Terraform command
+  #     working-directory: ./terraform-week5/3-s3
+  #     run: |
+  #       terraform init
+  #       terraform fmt -check
+  #       terraform apply -auto-approve
