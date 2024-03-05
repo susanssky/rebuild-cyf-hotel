@@ -71,9 +71,8 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
-      - name: Login with ssh
+      - name: Login with ssh & Import SQL Data & Docker-compose up
         run: |
-          echo "$PRIVATE_KEY" 
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
           mkdir -p ~/.ssh
@@ -84,15 +83,9 @@ jobs:
             IdentityFile private_key
             StrictHostKeyChecking no
           EOF
-      - name: Import SQL Data
-        working-directory: ./database
-        run: |
-          scp "./seeding.sql" ec2:./
+          scp "./database/seeding.sql" ec2:./
           ssh ec2 "psql postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql"
           rm seeding.sql
-
-      - name: Copy the docker-compose-week4.yaml to ec2 & docker-compose up
-        run: |
           scp "./docker-compose-week4.yaml" ec2:./
           ssh ec2 "sudo docker-compose -f docker-compose-week4.yaml pull && \
           SERVER_PORT=${SERVER_PORT} \
