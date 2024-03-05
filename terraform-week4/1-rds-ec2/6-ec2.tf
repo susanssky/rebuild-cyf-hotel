@@ -19,6 +19,7 @@ resource "aws_instance" "backend" {
   user_data                   = <<EOF
 #!/bin/bash
 sudo apt update
+sudo apt install postgresql -y
 sudo apt install stress -y
 sudo apt install docker.io -y
 sudo systemctl start docker
