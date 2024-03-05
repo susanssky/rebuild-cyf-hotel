@@ -36,7 +36,10 @@ jobs:
           echo "RDS_ENDPOINT=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
           echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
           echo "EC2_ID=$(terraform output -raw ec2_id)" >> $GITHUB_OUTPUT
-          echo "EC2_PRIVATE_KEY=$(terraform output -raw ec2_private_key)" >> $GITHUB_OUTPUT
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "EC2_PRIVATE_KEY<<$EOF" >> $GITHUB_OUTPUT
+          echo "$(terraform output -raw ec2_private_key)" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
 
   set-up-database-backend:
     needs: [RDS_EC2]
