@@ -41,15 +41,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Import SQL Data
-        working-directory: ./database
-        env:
-          DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
-        run: psql "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql
-  set-up-backend:
+
+  set-up-database-backend:
     needs: [RDS_EC2, set-up-database]
     runs-on: ubuntu-latest
     env:
+      DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
 
@@ -76,7 +73,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
-      - name: Login with ssh & copy the docker-compose-week4.yaml to ec2 & docker-compose up
+      - name: Login with ssh
         run: |
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
@@ -88,6 +85,12 @@ jobs:
             IdentityFile private_key
             StrictHostKeyChecking no
           EOF
+      - name: Import SQL Data
+        working-directory: ./database
+        run: psql "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql
+
+      - name: Copy the docker-compose-week4.yaml to ec2 & docker-compose up
+        run: |
           scp "./docker-compose-week4.yaml" ec2:./
           ssh ec2 "sudo docker-compose -f docker-compose-week4.yaml pull && \
           SERVER_PORT=${SERVER_PORT} \
@@ -98,7 +101,7 @@ jobs:
         # - name: stop instances
         #   run: aws ec2 stop-instances --instance-ids $EC2_ID
   set-up-frontend-and-run-tf:
-    needs: [RDS_EC2, set-up-backend]
+    needs: [RDS_EC2]
     runs-on: ubuntu-latest
     env:
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
