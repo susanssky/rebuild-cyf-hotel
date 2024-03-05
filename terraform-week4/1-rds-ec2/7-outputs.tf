@@ -14,3 +14,7 @@ output "ec2_private_key" {
   value     = tls_private_key.create-key-pair-for-ec2.private_key_pem
   sensitive = true
 }
+output "ec2_public_key" {
+  value     = tls_private_key.create-key-pair-for-ec2.public_key_openssh
+  sensitive = true
+}

@@ -73,6 +73,7 @@ jobs:
           aws-region: eu-west-2
       - name: Login with ssh
         run: |
+          echo "$PRIVATE_KEY" 
           echo "$PRIVATE_KEY" > private_key
           chmod 600 private_key
           mkdir -p ~/.ssh
