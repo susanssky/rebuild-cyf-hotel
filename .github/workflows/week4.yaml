@@ -37,26 +37,26 @@ jobs:
           echo "EC2_ID=$(terraform output -raw ec2_id)" >> $GITHUB_OUTPUT
 
   set-up-database:
-    needs: run-terraform-rds-ec2
+    needs: RDS_EC2
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Import SQL Data
         working-directory: ./database
         env:
-          DATABASE_HOSTNAME: ${{ needs.run-terraform-rds-ec2.outputs.rds-endpoint }}
+          DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
         run: psql "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql
   set-up-backend:
-    needs: [run-terraform-rds-ec2, set-up-database]
+    needs: [RDS_EC2, set-up-database]
     runs-on: ubuntu-latest
     env:
-      EC2_ID: ${{ needs.run-terraform-rds-ec2.outputs.ec2-id }}
-      EC2_IP: ${{ needs.run-terraform-rds-ec2.outputs.ec2-ip }}
+      EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
+      EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
 
       PRIVATE_KEY: ${{ secrets.AWS_KEY_PAIR }}
       USER_NAME: ${{ secrets.EC2_USERNAME }}
 
-      RDS_ENDPOINT: ${{  needs.run-terraform-rds-ec2.outputs.rds-endpoint }}
+      RDS_ENDPOINT: ${{  needs.RDS_EC2.outputs.rds-endpoint }}
       RDS_USER: ${{ secrets.POSTGRES_USER }}
       RDS_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       SERVER_PORT: 4000
@@ -98,10 +98,10 @@ jobs:
         # - name: stop instances
         #   run: aws ec2 stop-instances --instance-ids $EC2_ID
   set-up-frontend-and-run-tf:
-    needs: [run-terraform-rds-ec2, set-up-backend]
+    needs: [RDS_EC2, set-up-backend]
     runs-on: ubuntu-latest
     env:
-      EC2_IP: ${{ needs.run-terraform-rds-ec2.outputs.ec2-ip }}
+      EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
       SERVER_PORT: 4000
     steps:
       - uses: actions/checkout@v4
