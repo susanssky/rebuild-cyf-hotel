@@ -36,14 +36,8 @@ jobs:
           echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
           echo "EC2_ID=$(terraform output -raw ec2_id)" >> $GITHUB_OUTPUT
 
-  set-up-database:
-    needs: RDS_EC2
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
   set-up-database-backend:
-    needs: [RDS_EC2, set-up-database]
+    needs: [RDS_EC2]
     runs-on: ubuntu-latest
     env:
       DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
@@ -101,7 +95,7 @@ jobs:
         # - name: stop instances
         #   run: aws ec2 stop-instances --instance-ids $EC2_ID
   set-up-frontend-and-run-tf:
-    needs: [RDS_EC2]
+    needs: [set-up-database-backend]
     runs-on: ubuntu-latest
     env:
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
