@@ -1,5 +1,8 @@
 name: Week3 Coursewrok
 # on: push
+permissions:
+  id-token: write
+  contents: read
 on:
   project:
     types: deleted
@@ -100,8 +103,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: extract ec2 state
         id: ec2-state

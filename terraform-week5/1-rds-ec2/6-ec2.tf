@@ -7,9 +7,9 @@ resource "aws_instance" "backend" {
   ami                         = "ami-0505148b3591e4c07" //hard code because "data" can not filter free tier ami Ubuntu Server 22.04 LTS (HVM), SSD Volume Type (64-bit (x86))
   instance_type               = "t2.micro"
   key_name                    = aws_key_pair.ssh-key.key_name
-  subnet_id                   = aws_subnet.subnet1.id
-  vpc_security_group_ids      = [aws_security_group.sg.id]
-  availability_zone           = aws_subnet.subnet1.availability_zone
+  subnet_id                   = aws_subnet.public-subnet[0].id
+  vpc_security_group_ids      = [aws_security_group.ec2-sg.id]
+  availability_zone           = data.aws_availability_zones.available.names[0]
   associate_public_ip_address = true
   user_data                   = <<EOF
 #!/bin/bash

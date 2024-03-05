@@ -1,8 +1,11 @@
 name: Week4 Coursewrok
-# on: push
-on:
-  project:
-    types: deleted
+on: push
+permissions:
+  id-token: write
+  contents: read
+# on:
+#   project:
+#     types: deleted
 jobs:
   run-terraform-rds-ec2:
     runs-on: ubuntu-latest
@@ -17,8 +20,7 @@ jobs:
           terraform_wrapper: false # for get the terraform output value
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: Terraform command
         working-directory: ./terraform-week4/1-rds-ec2
@@ -72,8 +74,7 @@ jobs:
           docker push susanssky/devops:cyf-hotel-backend
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: Login with ssh & copy the docker-compose-week4.yaml to ec2 & docker-compose up
         run: |
@@ -96,35 +97,34 @@ jobs:
 
         # - name: stop instances
         #   run: aws ec2 stop-instances --instance-ids $EC2_ID
-  set-up-frontend-and-run-tf:
-    needs: [run-terraform-rds-ec2, set-up-backend]
-    runs-on: ubuntu-latest
-    env:
-      EC2_IP: ${{ needs.run-terraform-rds-ec2.outputs.ec2-ip }}
-      SERVER_PORT: 4000
-    steps:
-      - uses: actions/checkout@v4
-      - name: 'Create env file'
-        working-directory: ./client
-        run: |
-          echo "VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT}" > .env
-          cat .env
-      - name: build static frontend website
-        working-directory: ./client
-        run: |
-          npm ci
-          npm run build
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      - name: Terraform command
-        working-directory: ./terraform-week4/2-s3
-        run: |
-          terraform init
-          terraform fmt -check
-          terraform apply -auto-approve
+  # set-up-frontend-and-run-tf:
+  #   needs: [run-terraform-rds-ec2, set-up-backend]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     EC2_IP: ${{ needs.run-terraform-rds-ec2.outputs.ec2-ip }}
+  #     SERVER_PORT: 4000
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: 'Create env file'
+  #       working-directory: ./client
+  #       run: |
+  #         echo "VITE_SERVER_URL=http://${EC2_IP}:${SERVER_PORT}" > .env
+  #         cat .env
+  #     - name: build static frontend website
+  #       working-directory: ./client
+  #       run: |
+  #         npm ci
+  #         npm run build
+  #     - uses: hashicorp/setup-terraform@v3
+  #       with:
+  #         terraform_wrapper: false
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
+  #         aws-region: eu-west-2
+  #     - name: Terraform command
+  #       working-directory: ./terraform-week4/2-s3
+  #       run: |
+  #         terraform init
+  #         terraform fmt -check
+  #         terraform apply -auto-approve

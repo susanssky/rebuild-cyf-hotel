@@ -1,5 +1,8 @@
 name: Week2 Coursework
 # on: push
+permissions:
+  id-token: write
+  contents: read
 on:
   project:
     types: deleted
@@ -15,8 +18,7 @@ jobs:
           npm run build
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.IAM_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.IAM_USER_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::503447358475:role/aws-gh-action
           aws-region: eu-west-2
       - name: Sync frontend files to S3
         run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
