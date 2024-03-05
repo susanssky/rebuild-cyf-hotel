@@ -85,7 +85,6 @@ jobs:
           EOF
           scp "./database/seeding.sql" ec2:./
           ssh ec2 "psql postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME" < seeding.sql"
-          rm seeding.sql
           scp "./docker-compose-week4.yaml" ec2:./
           ssh ec2 "sudo docker-compose -f docker-compose-week4.yaml pull && \
           SERVER_PORT=${SERVER_PORT} \
