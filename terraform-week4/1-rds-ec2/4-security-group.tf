@@ -1,4 +1,25 @@
-resource "aws_security_group" "sg" {
+resource "aws_security_group" "rds-sg" {
+  vpc_id = aws_vpc.vpc.id
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    cidr_blocks     = [var.anyone_access_ip]
+    security_groups = [aws_security_group.ec2-sg.id]
+  }
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = [var.anyone_access_ip]
+    prefix_list_ids = []
+  }
+  tags = {
+    Name = "${var.week_prefix}-rds-sg"
+  }
+}
+
+resource "aws_security_group" "ec2-sg" {
   vpc_id = aws_vpc.vpc.id
   ingress {
     from_port   = 22
@@ -18,12 +39,6 @@ resource "aws_security_group" "sg" {
     protocol    = "tcp"
     cidr_blocks = [var.anyone_access_ip]
   }
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = [var.anyone_access_ip]
-  }
   egress {
     from_port       = 0
     to_port         = 0
@@ -32,6 +47,7 @@ resource "aws_security_group" "sg" {
     prefix_list_ids = []
   }
   tags = {
-    Name = "${var.week_prefix}-sg"
+    Name = "${var.week_prefix}-ec2-sg"
   }
 }
+
