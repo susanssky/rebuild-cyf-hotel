@@ -58,7 +58,7 @@ jobs:
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
       EC2_PRIVATE_KEY: ${{ needs.RDS_EC2.outputs.ec2-private_key }}
-      EC2_USER_NAME: ${{ secrets.EC2_USERNAME }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
 
       RDS_ENDPOINT: ${{  needs.RDS_EC2.outputs.rds-endpoint }}
       RDS_USER: ${{ secrets.POSTGRES_USER }}
