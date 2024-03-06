@@ -38,6 +38,14 @@ resource "aws_cloudwatch_dashboard" "main" {
           region = "eu-west-2"
           title  = "EC2 Instance CPU"
         }
+      },
+      {
+        type   = "text"
+        x      = 0
+        y      = 7
+        width  = 3
+        height = 3
+
         }, {
         type   = "metric"
         x      = 0
@@ -81,14 +89,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "RDS WriteThroughput"
         }
       },
-      {
-        type   = "text"
-        x      = 0
-        y      = 7
-        width  = 3
-        height = 3
-
-      }
     ],
   })
 }
