@@ -35,12 +35,6 @@ resource "aws_security_group" "ec2-sg" {
     protocol    = "tcp"
     cidr_blocks = [var.anyone_access_ip]
   }
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = [var.anyone_access_ip]
-  }
   egress {
     from_port       = 0
     to_port         = 0

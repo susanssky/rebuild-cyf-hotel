@@ -43,6 +43,7 @@ resource "aws_autoscaling_group" "autoscaling-group" {
     version = "$Latest"
   }
 }
+# including ec2 alarm
 resource "aws_autoscaling_policy" "autoscaling-policy" {
   name        = "${var.week_prefix}-scaling-target-tracking-policy"
   policy_type = "TargetTrackingScaling"
