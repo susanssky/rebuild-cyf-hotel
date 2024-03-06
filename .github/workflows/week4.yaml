@@ -73,7 +73,7 @@ jobs:
           aws-region: eu-west-2
       - name: Login with ssh & Import SQL Data & Docker-compose up
         run: |
-          echo "$PRIVATE_KEY" > private_key
+          echo "$EC2_PRIVATE_KEY" > private_key
           chmod 600 private_key
           mkdir -p ~/.ssh
           cat >>~/.ssh/config << EOF
