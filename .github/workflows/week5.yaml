@@ -17,6 +17,7 @@ jobs:
       key-name: ${{ steps.rds-ec2-outputs.outputs.KEY_NAME }}
       ec2_security-group-id: ${{ steps.rds-ec2-outputs.outputs.EC2_SG_ID }}
       vpc-id: ${{ steps.rds-ec2-outputs.outputs.VPC_ID }}
+      rds-identifier: ${{ steps.rds-ec2-outputs.outputs.RDS_IDENTIFIER }}
       public-subnet-ids: ${{ steps.rds-ec2-outputs.outputs.PUBLIC_SUBNET_IDS }}
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +49,7 @@ jobs:
           echo "EC2_SG_ID=$(terraform output -raw ec2_security_group_id)" >> $GITHUB_OUTPUT
           echo "VPC_ID=$(terraform output -raw vpc_id)" >> $GITHUB_OUTPUT
           echo "PUBLIC_SUBNET_IDS=$(terraform output -json public_subnet_id)" >> $GITHUB_OUTPUT
+          echo "RDS_IDENTIFIER=$(terraform output -raw rds_identifier)" >> $GITHUB_OUTPUT
 
   set-up-database-backend:
     needs: RDS_EC2
@@ -104,6 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [RDS_EC2, set-up-database-backend]
     env:
+      RDS_IDENTIFIER: ${{ needs.RDS_EC2.outputs.rds-identifier }}
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       KEY_NAME: ${{ needs.RDS_EC2.outputs.key-name }}
       EC2_SG_ID: ${{ needs.RDS_EC2.outputs.ec2_security-group-id }}
@@ -127,7 +130,7 @@ jobs:
           echo $PUBLIC_SUBNET_IDS
           terraform init
           terraform fmt -check
-          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow_aws_security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS"
+          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow__security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS" -var "from_previous_workflow_rds_identifier=$RDS_IDENTIFIER"
       # - name: stop instances
       #   run: aws ec2 stop-instances --instance-ids $EC2_ID
       - name: save the outputs value from tf to the outputs in this job

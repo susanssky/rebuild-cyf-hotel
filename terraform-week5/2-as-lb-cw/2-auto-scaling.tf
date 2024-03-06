@@ -14,7 +14,7 @@ resource "aws_launch_template" "ec2-template" {
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups             = [var.from_previous_workflow_aws_security_group_id]
+    security_groups             = [var.from_previous_workflow_ec2_security_group_id]
   }
 
   tags = {
