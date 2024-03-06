@@ -50,8 +50,7 @@ jobs:
           echo "PUBLIC_SUBNET_IDS=$(terraform output -json public_subnet_id)" >> $GITHUB_OUTPUT
           echo "$PUBLIC_SUBNET_IDS"
           echo "$(terraform output public_subnet_id)"
-          echo "$(terraform show -type(terraform output public_subnet_id))"
-          echo "$(terraform output -raw public_subnet_id)"
+          echo "$(terraform output -json public_subnet_id)"
 
   set-up-database-backend:
     needs: RDS_EC2
