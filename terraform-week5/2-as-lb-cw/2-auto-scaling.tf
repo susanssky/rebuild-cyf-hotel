@@ -31,7 +31,7 @@ resource "aws_launch_template" "ec2-template" {
 }
 
 resource "aws_autoscaling_group" "autoscaling-group" {
-  vpc_zone_identifier = [var.from_previous_workflow_public_subnet_ids[*]]
+  vpc_zone_identifier = [for id in aws_subnet.private-subnet[*].id : id]
   desired_capacity    = 1
   min_size            = 1
   max_size            = 3
