@@ -11,9 +11,6 @@ data "aws_instances" "auto_scaling_ec2" {
 output "ec2-as-ids" {
   value = data.aws_instances.auto_scaling_ec2.ids
 }
-output "ids" {
-  value = data.aws_instances.auto_scaling_ec2.ids
-}
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "my-dashboard"
 
@@ -28,7 +25,7 @@ resource "aws_cloudwatch_dashboard" "main" {
 
         properties = {
           metrics = [
-            for instance_id in data.aws_instances.auto_scaling_ec2.ec2-as-ids : [
+            for instance_id in data.aws_instances.auto_scaling_ec2.ids : [
               "AWS/EC2",
               "CPUUtilization",
               "InstanceId",
