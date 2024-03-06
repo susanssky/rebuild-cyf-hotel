@@ -96,7 +96,7 @@ jobs:
         # - name: stop instances
         #   run: aws ec2 stop-instances --instance-ids $EC2_ID
   set-up-frontend-and-run-tf:
-    needs: [set-up-database-backend]
+    needs: [RDS_EC2, set-up-database-backend]
     runs-on: ubuntu-latest
     env:
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}

@@ -1,3 +1,3 @@
 variable "week_prefix" {
-  default = "cyf-cloud-week5"
+  default = "cloud-week5"
 }
