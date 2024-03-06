@@ -69,28 +69,28 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "RDS ReadThroughput"
         }
       },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
+      # {
+      #   type   = "metric"
+      #   x      = 0
+      #   y      = 0
+      #   width  = 12
+      #   height = 6
 
-        properties = {
-          metrics = [
-            [
-              "AWS/RDS",
-              "WriteThroughput",
-              "DBInstanceIdentifier",
-              var.from_previous_workflow_rds_identifier
-            ]
-          ]
-          period = 300
-          stat   = "Average"
-          region = "eu-west-2"
-          title  = "RDS WriteThroughput"
-        }
-      },
+      #   properties = {
+      #     metrics = [
+      #       [
+      #         "AWS/RDS",
+      #         "WriteThroughput",
+      #         "DBInstanceIdentifier",
+      #         var.from_previous_workflow_rds_identifier
+      #       ]
+      #     ]
+      #     period = 300
+      #     stat   = "Average"
+      #     region = "eu-west-2"
+      #     title  = "RDS WriteThroughput"
+      #   }
+      # },
     ],
   })
 }
