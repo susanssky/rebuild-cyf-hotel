@@ -47,7 +47,7 @@ jobs:
           echo "KEY_NAME=$(terraform output -raw key_name)" >> $GITHUB_OUTPUT
           echo "EC2_SG_ID=$(terraform output -raw ec2_security_group_id)" >> $GITHUB_OUTPUT
           echo "VPC_ID=$(terraform output -raw vpc_id)" >> $GITHUB_OUTPUT
-          echo "PUBLIC_SUBNET_IDS=$(terraform output -raw public-subnet-ids)" >> $GITHUB_OUTPUT
+          echo "PUBLIC_SUBNET_IDS=$(terraform output -raw public_subnet_id)" >> $GITHUB_OUTPUT
 
   set-up-database-backend:
     needs: RDS_EC2
