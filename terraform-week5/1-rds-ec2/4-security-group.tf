@@ -1,5 +1,6 @@
 resource "aws_security_group" "rds-sg" {
   vpc_id = aws_vpc.vpc.id
+  name   = "${var.week_prefix}-rds-sg"
   ingress {
     from_port       = 5432
     to_port         = 5432
@@ -21,6 +22,7 @@ resource "aws_security_group" "rds-sg" {
 
 resource "aws_security_group" "ec2-sg" {
   vpc_id = aws_vpc.vpc.id
+  name   = "${var.week_prefix}-ec2-sg"
   ingress {
     from_port   = 22
     to_port     = 22

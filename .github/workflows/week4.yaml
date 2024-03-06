@@ -1,11 +1,11 @@
 name: Week4 Coursewrok
-on: push
-permissions:
+# on: push
+permissions: # because use role-to-assume to login aws
   id-token: write
   contents: read
-# on:
-#   project:
-#     types: deleted
+on:
+  project:
+    types: deleted
 jobs:
   RDS_EC2:
     runs-on: ubuntu-latest
@@ -45,7 +45,6 @@ jobs:
     needs: [RDS_EC2]
     runs-on: ubuntu-latest
     env:
-      DATABASE_HOSTNAME: ${{ needs.RDS_EC2.outputs.rds-endpoint }}
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
       PRIVATE_KEY: ${{ needs.RDS_EC2.outputs.ec2_private_key }}
@@ -58,6 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
+        # v= if there is no update in 'backend' folder
         if: steps.filter.outputs.backend == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -84,12 +84,13 @@ jobs:
             StrictHostKeyChecking no
           EOF
           scp "./database/seeding.sql" ec2:./
-          ssh ec2 "sudo -u postgres -i psql postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@$DATABASE_HOSTNAME < seeding.sql"
+          ssh ec2 "sudo -u postgres -i psql postgresql://${RDS_USER}:${RDS_PASSWORD}@$RDS_ENDPOINT < seeding.sql"
           ssh ec2 "rm seeding.sql"
           scp "./docker-compose-week4.yaml" ec2:./
           ssh ec2 "sudo docker-compose -f docker-compose-week4.yaml pull && \
           SERVER_PORT=${SERVER_PORT} \
           DATABASE_URL=postgres://${RDS_USER}:${RDS_PASSWORD}@${RDS_ENDPOINT}/ \
+          sudo docker-compose -f docker-compose-week4.yaml pull && \
           docker-compose -f docker-compose-week4.yaml up -d && \
           docker image prune -a -f"
 

@@ -21,6 +21,5 @@ data "aws_availability_zones" "available" {
 variable "database_username" {}
 variable "database_password" {}
 
-variable "ec2_public_key" {}
 variable "docker_pw" {}
 

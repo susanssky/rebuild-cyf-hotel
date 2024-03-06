@@ -1,7 +1,12 @@
 
+resource "tls_private_key" "create-key-pair-for-ec2" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "aws_key_pair" "ssh-key" {
   key_name   = "tf-aws-ec2-key"
-  public_key = var.ec2_public_key
+  public_key = tls_private_key.create-key-pair-for-ec2.public_key_openssh
 }
 resource "aws_instance" "backend" {
   ami                         = "ami-0505148b3591e4c07" //hard code because "data" can not filter free tier ami Ubuntu Server 22.04 LTS (HVM), SSD Volume Type (64-bit (x86))
@@ -9,11 +14,12 @@ resource "aws_instance" "backend" {
   key_name                    = aws_key_pair.ssh-key.key_name
   subnet_id                   = aws_subnet.public-subnet[0].id
   vpc_security_group_ids      = [aws_security_group.ec2-sg.id]
-  availability_zone           = data.aws_availability_zones.available.names[0]
+  availability_zone           = aws_subnet.public-subnet[0].availability_zone
   associate_public_ip_address = true
   user_data                   = <<EOF
 #!/bin/bash
 sudo apt update
+sudo apt install postgresql -y
 sudo apt install stress -y
 sudo apt install docker.io -y
 sudo systemctl start docker

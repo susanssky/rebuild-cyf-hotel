@@ -13,5 +13,5 @@ variable "from_previous_workflow_ec2_id" {}
 variable "from_previous_workflow_key_name" {}
 variable "from_previous_workflow_aws_security_group_id" {}
 variable "from_previous_workflow_vpc_id" {}
-variable "from_previous_workflow_subnet1_id" {}
+variable "from_previous_workflow_public_subnet_ids" {}
 variable "from_previous_workflow_subnet2_id" {}
