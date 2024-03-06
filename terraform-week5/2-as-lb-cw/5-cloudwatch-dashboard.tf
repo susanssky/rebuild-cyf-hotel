@@ -39,14 +39,16 @@ resource "aws_cloudwatch_dashboard" "main" {
       #     title  = "EC2 Instance CPU"
       #   }
       # },
-      {
-        type   = "text"
-        x      = 0
-        y      = 7
-        width  = 3
-        height = 3
-
-      },
+      # {
+      #   type   = "text"
+      #   x      = 0
+      #   y      = 7
+      #   width  = 3
+      #   height = 3
+      #   properties = {
+      #     markdown = "Hello world"
+      #   }
+      # },
       {
         type   = "metric"
         x      = 0
