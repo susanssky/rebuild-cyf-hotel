@@ -1,3 +1,3 @@
 variable "week_prefix" {
-  default = "cloud-week4"
+  default = "cloud-week1"
 }
