@@ -130,7 +130,7 @@ jobs:
           echo $PUBLIC_SUBNET_IDS
           terraform init
           terraform fmt -check
-          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$EC2_KEY_NAME" -var "from_previous_workflow_ec2_security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS" -var "from_previous_workflow_rds_identifier=$RDS_IDENTIFIER"
+          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_ec2_key_name=$EC2_KEY_NAME" -var "from_previous_workflow_ec2_security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS" -var "from_previous_workflow_rds_identifier=$RDS_IDENTIFIER"
       # - name: stop instances
       #   run: aws ec2 stop-instances --instance-ids $EC2_ID
       - name: save the outputs value from tf to the outputs in this job
