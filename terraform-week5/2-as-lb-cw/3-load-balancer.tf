@@ -24,7 +24,7 @@ resource "aws_lb" "cyf-hotel-lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.bl-sg.id] # http 80
-  subnets            = [for id in var.from_previous_workflow_public_subnet_ids[*].id : id]
+  subnets            = [for id in var.from_previous_workflow_public_subnet_ids[*] : id]
 
   tags = {
     Name = "${var.week_prefix}-lb"
