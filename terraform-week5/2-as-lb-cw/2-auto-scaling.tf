@@ -6,7 +6,7 @@ resource "aws_ami_from_instance" "create-image" {
 resource "aws_launch_template" "ec2-template" {
   image_id      = aws_ami_from_instance.create-image.id
   instance_type = "t2.micro"
-  key_name      = var.from_previous_workflow_key_name
+  key_name      = var.from_previous_workflow_ec2_key_name
 
   # monitoring {
   #   enabled = true

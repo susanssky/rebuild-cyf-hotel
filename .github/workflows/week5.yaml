@@ -1,23 +1,23 @@
 name: Week5 Coursewrok
-on: push
+# on: push
 permissions: # because use role-to-assume to login aws
   id-token: write
   contents: read
-# on:
-#   project:
-#     types: deleted
+on:
+  project:
+    types: deleted
 jobs:
   RDS_EC2:
     runs-on: ubuntu-latest
     outputs:
       rds-endpoint: ${{ steps.rds-ec2-outputs.outputs.RDS_ENDPOINT }}
+      rds-identifier: ${{ steps.rds-ec2-outputs.outputs.RDS_IDENTIFIER }}
       ec2-ip: ${{ steps.rds-ec2-outputs.outputs.EC2_IP }}
       ec2-id: ${{ steps.rds-ec2-outputs.outputs.EC2_ID }}
-      ec2_private_key: ${{ steps.rds-ec2-outputs.outputs.EC2_PRIVATE_KEY }}
-      key-name: ${{ steps.rds-ec2-outputs.outputs.KEY_NAME }}
-      ec2_security-group-id: ${{ steps.rds-ec2-outputs.outputs.EC2_SG_ID }}
+      ec2-private_key: ${{ steps.rds-ec2-outputs.outputs.EC2_PRIVATE_KEY }}
+      ec2-key-name: ${{ steps.rds-ec2-outputs.outputs.KEY_NAME }}
+      ec2-security-group-id: ${{ steps.rds-ec2-outputs.outputs.EC2_SG_ID }}
       vpc-id: ${{ steps.rds-ec2-outputs.outputs.VPC_ID }}
-      rds-identifier: ${{ steps.rds-ec2-outputs.outputs.RDS_IDENTIFIER }}
       public-subnet-ids: ${{ steps.rds-ec2-outputs.outputs.PUBLIC_SUBNET_IDS }}
     steps:
       - uses: actions/checkout@v4
@@ -57,8 +57,8 @@ jobs:
     env:
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
       EC2_IP: ${{ needs.RDS_EC2.outputs.ec2-ip }}
-      PRIVATE_KEY: ${{ needs.RDS_EC2.outputs.ec2_private_key }}
-      USER_NAME: ${{ secrets.EC2_USERNAME }}
+      EC2_PRIVATE_KEY: ${{ needs.RDS_EC2.outputs.ec2-private_key }}
+      EC2_USER_NAME: ${{ secrets.EC2_USERNAME }}
 
       RDS_ENDPOINT: ${{  needs.RDS_EC2.outputs.rds-endpoint }}
       RDS_USER: ${{ secrets.POSTGRES_USER }}
@@ -88,7 +88,7 @@ jobs:
           cat >>~/.ssh/config << EOF
           Host ec2
             HostName $EC2_IP
-            User $USER_NAME
+            User $EC2_USERNAME
             IdentityFile private_key
             StrictHostKeyChecking no
           EOF
@@ -108,8 +108,8 @@ jobs:
     env:
       RDS_IDENTIFIER: ${{ needs.RDS_EC2.outputs.rds-identifier }}
       EC2_ID: ${{ needs.RDS_EC2.outputs.ec2-id }}
-      KEY_NAME: ${{ needs.RDS_EC2.outputs.key-name }}
-      EC2_SG_ID: ${{ needs.RDS_EC2.outputs.ec2_security-group-id }}
+      EC2_KEY_NAME: ${{ needs.RDS_EC2.outputs.ec2-key-name }}
+      EC2_SG_ID: ${{ needs.RDS_EC2.outputs.ec2-security-group-id }}
       VPC_ID: ${{ needs.RDS_EC2.outputs.vpc-id }}
       PUBLIC_SUBNET_IDS: ${{ needs.RDS_EC2.outputs.public-subnet-ids }}
 
@@ -130,7 +130,7 @@ jobs:
           echo $PUBLIC_SUBNET_IDS
           terraform init
           terraform fmt -check
-          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$KEY_NAME" -var "from_previous_workflow_ec2_security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS" -var "from_previous_workflow_rds_identifier=$RDS_IDENTIFIER"
+          terraform apply -auto-approve -var "from_previous_workflow_ec2_id=$EC2_ID" -var "from_previous_workflow_key_name=$EC2_KEY_NAME" -var "from_previous_workflow_ec2_security_group_id=$EC2_SG_ID" -var "from_previous_workflow_vpc_id=$VPC_ID" -var "from_previous_workflow_public_subnet_ids=$PUBLIC_SUBNET_IDS" -var "from_previous_workflow_rds_identifier=$RDS_IDENTIFIER"
       # - name: stop instances
       #   run: aws ec2 stop-instances --instance-ids $EC2_ID
       - name: save the outputs value from tf to the outputs in this job
