@@ -16,29 +16,29 @@ resource "aws_cloudwatch_dashboard" "main" {
 
   dashboard_body = jsonencode({
     widgets = [
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
+      # {
+      #   type   = "metric"
+      #   x      = 0
+      #   y      = 0
+      #   width  = 12
+      #   height = 6
 
-        properties = {
-          metrics = [
-            for instance_id in data.aws_instances.auto_scaling_ec2.ids : [
-              "AWS/EC2",
-              "CPUUtilization",
-              "InstanceId",
-              instance_id
-            ]
-          ]
+      #   properties = {
+      #     metrics = [
+      #       for instance_id in data.aws_instances.auto_scaling_ec2.ids : [
+      #         "AWS/EC2",
+      #         "CPUUtilization",
+      #         "InstanceId",
+      #         instance_id
+      #       ]
+      #     ]
 
-          period = 300
-          stat   = "Average"
-          region = "eu-west-2"
-          title  = "EC2 Instance CPU"
-        }
-      },
+      #     period = 300
+      #     stat   = "Average"
+      #     region = "eu-west-2"
+      #     title  = "EC2 Instance CPU"
+      #   }
+      # },
       {
         type   = "text"
         x      = 0
@@ -46,7 +46,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 3
         height = 3
 
-        }, {
+      },
+      {
         type   = "metric"
         x      = 0
         y      = 0
@@ -67,7 +68,8 @@ resource "aws_cloudwatch_dashboard" "main" {
           region = "eu-west-2"
           title  = "RDS ReadThroughput"
         }
-        }, {
+      },
+      {
         type   = "metric"
         x      = 0
         y      = 0
