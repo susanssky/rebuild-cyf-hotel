@@ -22,7 +22,6 @@ jobs:
           aws-region: eu-west-2
       - name: Sync frontend files to S3
         run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
-      # Thank you :)
       # - name: Remove existing files from AWS S3
       #   run: |
       #     aws s3 rm \
@@ -55,4 +54,4 @@ jobs:
           cd ${{ toJSON(github.event.repository.name) }} && \
           git pull origin main && cd server && \
           npm i && cd && pm2 start server'
-        # The above toJSON(github.event.repository.name) is to get the current repository name.
+
