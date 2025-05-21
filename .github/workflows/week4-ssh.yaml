@@ -1,4 +1,4 @@
-name: Week4 Coursewrok
+name: Week4 Coursewrok with ssh
 # on: push
 permissions: # because use role-to-assume to login aws
   id-token: write

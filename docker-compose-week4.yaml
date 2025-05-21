@@ -1,7 +1,7 @@
 version: '3'
 services:
   backend:
-    image: susanssky/devops:cyf-hotel-backend
+    image: susanssky/cyf-hotel-backend:latest
     restart: always
     ports:
       - 4000:4000
