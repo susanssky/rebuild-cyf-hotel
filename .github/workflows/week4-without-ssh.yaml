@@ -10,8 +10,6 @@ jobs:
   RDS:
     runs-on: ubuntu-latest
     outputs:
-      rds-user: ${{ steps.tf-outputs.outputs.RDS_USER }}
-      rds-pw: ${{ steps.tf-outputs.outputs.RDS_PW }}
       rds-url: ${{ steps.tf-outputs.outputs.RDS_URL }}
       vpc-id: ${{ steps.tf-outputs.outputs.VPC_ID }}
       ec2-sg-id: ${{ steps.tf-outputs.outputs.EC2_SG_ID }}
@@ -60,8 +58,6 @@ jobs:
       EC2_SG_ID: ${{ needs.RDS.outputs.ec2-sg-id }}
     outputs:
       ec2-ip: ${{ steps.tf-outputs.outputs.EC2_IP }}
-      ec2-id: ${{ steps.tf-outputs.outputs.EC2_ID }}
-      ec2-private_key: ${{ steps.tf-outputs.outputs.EC2_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
