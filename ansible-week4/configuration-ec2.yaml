@@ -1,0 +1,84 @@
+---
+- name: Install postgres, docker, docker compose
+  hosts: aws_ec2
+  become: yes
+  tasks:
+    - name: Update apt cache and install the packages
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - docker.io
+          - docker-compose-v2
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+      
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+- name: Move the files to EC2, seed to the db, create .env file
+  hosts: aws_ec2
+  vars:
+    database_username: "{{ var.database_username }}"
+    database_password: "{{ var.database_password }}"
+    database_endpoint: "{{ var.database_endpoint }}"
+  tasks:
+    - name: Copy the sql file to EC2
+      ansible.builtin.copy:
+        src: ../database/seeding.sql
+        dest: seeding.sql
+
+    - name: Copy the docker compose file to EC2
+      ansible.builtin.copy:
+        src: ../docker-compose-week4.yaml
+        dest: docker-compose-week4.yaml
+
+    - name: Run PostgreSQL seeding script
+      ansible.builtin.command:
+        cmd: psql postgresql://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres -f seeding.sql
+
+    - name: Create .env file
+      ansible.builtin.copy:
+        content: |
+          SERVER_PORT=4000
+          DATABASE_URL=postgres://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres
+        dest: .env
+
+- name: Run Docker compose
+  hosts: aws_ec2
+  become: yes
+  tasks:
+    - name: Run docker compose
+      community.docker.docker_compose_v2:
+        project_src: /home/ubuntu
+        files:
+          - docker-compose-week4.yaml
+        state: present
+        pull: always
+      register: backendContainer
+
+    - name: Wait for container to fully start
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Check Docker container logs
+      ansible.builtin.command:
+        cmd: docker logs {{ backendContainer.containers[0].ID }}
+      register: docker_logs
+
+    - name: Display Docker logs
+      ansible.builtin.debug:
+        msg: "{{ docker_logs.stdout_lines }}"
+
+    - name: Prune unused Docker images
+      ansible.builtin.command:
+        cmd: docker image prune -a -f

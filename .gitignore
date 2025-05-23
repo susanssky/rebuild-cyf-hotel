@@ -28,3 +28,4 @@ yarn-error.log*
 **.lock.*
 **.env
 **.terraform
+tf-aws-ec2-key*

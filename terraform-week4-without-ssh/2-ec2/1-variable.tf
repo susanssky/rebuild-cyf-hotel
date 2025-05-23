@@ -18,14 +18,4 @@ data "aws_availability_zones" "available" {
 
 variable "ec2_sg_id" {}
 
-variable "database_username" {}
-
-variable "database_password" {}
-
-variable "database_endpoint" {}
-
-variable "current_repo_name" {}
-
-locals {
-  git_repository = "https://github.com/susanssky/${var.current_repo_name}.git"
-}
+variable "ec2_public_key" {}
