@@ -1,11 +1,11 @@
 name: Week4 Coursewrok with ansible (terraform-week4-without-ssh)
-on: push
+# on: push
 permissions: # because use role-to-assume to login aws
   id-token: write
   contents: read
-# on:
-#   project:
-#     types: deleted
+on:
+  project:
+    types: deleted
 jobs:
   RDS:
     runs-on: ubuntu-latest
