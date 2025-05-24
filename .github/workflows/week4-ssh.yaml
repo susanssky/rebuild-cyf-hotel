@@ -1,4 +1,4 @@
-name: Week4 Coursewrok with ssh
+name: Week4 Coursewrok with ssh (terraform-week4-with-ssh, userdata, without ansible)
 # on: push
 permissions: # because use role-to-assume to login aws
   id-token: write

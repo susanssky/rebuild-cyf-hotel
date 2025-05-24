@@ -1,4 +1,4 @@
-name: Week4 Coursewrok without ssh to pass sql and compose file
+name: Week4 Coursewrok without ssh to pass sql and compose file (terraform-week4-without-ssh/2-ec2-userdata)
 # on: push
 permissions: # because use role-to-assume to login aws
   id-token: write
