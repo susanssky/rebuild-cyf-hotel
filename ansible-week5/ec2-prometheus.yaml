@@ -1,0 +1,158 @@
+---
+- name: Install postgres, docker, docker compose, unzip
+  hosts: aws_ec2
+  become: yes
+  tasks:
+    - name: Update apt cache and install the packages
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - docker.io
+          - docker-compose-v2
+          - unzip
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Download AWS CLI v2
+      get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+
+    - name: Unzip AWS CLI package
+      unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install AWS CLI
+      command: /tmp/aws/install --update --install-dir /usr/local/aws-cli --bin-dir /usr/local/bin
+      args:
+        creates: /usr/local/bin/aws
+
+    - name: Clean up downloaded files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/awscliv2.zip
+        - /tmp/aws
+
+    - name: Verify AWS CLI installation
+      command: aws --version
+      register: aws_version
+
+    - name: Debug AWS CLI version
+      debug:
+        msg: "{{ aws_version.stdout }}"
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+- name: Get secret from AWS Secrets Manager
+  hosts: aws_ec2
+  vars:
+    secret_arn: "{{ var.secret_arn }}"
+  tasks:
+    - name: Fetch secret value
+      ansible.builtin.command:
+        cmd: aws secretsmanager get-secret-value --secret-id {{ secret_arn }} --query SecretString --output text
+      register: secret_value
+
+    - name: Parse secret value
+      ansible.builtin.set_fact:
+        secret_json: "{{ secret_value.stdout | from_json }}"
+
+    - name: Set database credentials
+      ansible.builtin.set_fact:
+        database_username: "{{ secret_json.username }}"
+        database_password: "{{ secret_json.password }}"
+        database_endpoint: "{{ secret_json.endpoint }}"
+
+- name: Move the files to EC2, seed to the db
+  hosts: aws_ec2
+  tasks:
+    - name: Copy the sql file to EC2
+      ansible.builtin.copy:
+        src: ../database/seeding.sql
+        dest: seeding.sql
+
+    - name: Copy the docker compose file to EC2
+      ansible.builtin.copy:
+        src: ../docker-compose-week5.yaml
+        dest: docker-compose-week5.yaml
+
+    - name: Copy prometheus-week5 folder to home directory
+      ansible.builtin.copy:
+        src: ../prometheus-week5/
+        dest: ./prometheus-week5/
+
+    - name: Run PostgreSQL seeding script
+      ansible.builtin.command:
+        cmd: psql postgresql://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres -f seeding.sql
+
+- name: Docker Job
+  hosts: aws_ec2
+  become: yes
+  tags:
+    - docker_job
+  tasks:
+    - name: Run docker compose down and remove images
+      community.docker.docker_compose_v2:
+        project_src: /home/ubuntu
+        files:
+          - docker-compose-week5.yaml
+        state: absent
+        remove_images: all
+
+    - name: Run docker compose
+      ansible.builtin.shell: |
+        cd /home/ubuntu
+        docker compose -f docker-compose-week5.yaml pull
+        docker compose -f docker-compose-week5.yaml up -d
+      environment:
+        SERVER_PORT: 4000
+        DATABASE_URL: "postgresql://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres"
+        RDS_USER: "{{ database_username }}"
+        RDS_PASS: "{{ database_password }}"
+        RDS_ENDPOINT: "{{ database_endpoint }}"
+
+    - name: Get container IDs
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose-week5.yaml ps -q
+      register: containerIds
+      changed_when: false
+
+    - name: Wait for container to fully start
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Check and display Docker container logs
+      ansible.builtin.shell: |
+        echo "====== {{ item[:12] }} ======"
+        docker logs --tail 10 {{ item }}
+      loop: "{{ containerIds.stdout_lines }}"
+      loop_control:
+        label: "{{ item[:12] }}"
+      register: docker_logs_output
+      changed_when: false
+
+    - name: Display Docker logs
+      ansible.builtin.debug:
+        msg: "{{ item.stdout_lines + item.stderr_lines }}"
+      loop: "{{ docker_logs_output.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Prune unused Docker images
+      ansible.builtin.command:
+        cmd: docker image prune -a -f

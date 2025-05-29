@@ -16,6 +16,12 @@ jobs:
       ec2-private_key: ${{ steps.tf-outputs.outputs.EC2_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'server/**'
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false # for get the terraform output value

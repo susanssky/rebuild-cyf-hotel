@@ -3,7 +3,7 @@ provider "aws" {}
 terraform {
   backend "s3" {
     bucket = "cyf-hotel-devops-github-tfstate"
-    key    = "week4-1-rds-module.tfstate"
+    key    = "week5-1-rds-module.tfstate"
     region = "eu-west-2"
   }
 }
@@ -22,12 +22,12 @@ module "rds" {
 }
 
 output "secret_manager_arn" {
-  value = module.rds.secret_manager_arn
-    sensitive = true
+  value     = module.rds.secret_manager_arn
+  sensitive = true
 }
 
 output "ec2_sg_id" {
-  value = module.rds.ec2_sg_id
-    sensitive = true
+  value     = module.rds.ec2_sg_id
+  sensitive = true
 }
 

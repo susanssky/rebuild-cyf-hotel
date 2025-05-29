@@ -1,0 +1,49 @@
+services:
+  backend:
+    image: susanssky/cyf-hotel-backend:latest
+    container_name: cyf-hotel-backend
+    restart: always
+    ports:
+      - 4000:4000
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus-week5/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./prometheus-week5/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./prometheus-week5/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./prometheus-week5/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - 3000:3000
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    ports:
+      - 9100:9100
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_URI: ${RDS_ENDPOINT}
+      DATA_SOURCE_USER: ${RDS_USER}
+      DATA_SOURCE_PASS: ${RDS_PASS}
+    ports:
+      - 9187:9187
+  yace:
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
+    container_name: yace
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./prometheus-week5/yace.yaml:/etc/yace/config.yml
+

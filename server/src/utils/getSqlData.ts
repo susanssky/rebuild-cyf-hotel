@@ -5,6 +5,10 @@ export const queryAndRespond = async (
   sql: string,
   id?: number | string
 ) => {
+  if (!client) {
+    return res.status(200).json([])
+  }
+  
   try {
     const parameters = id !== undefined ? [id] : []
     const result = await client.query(sql, parameters)

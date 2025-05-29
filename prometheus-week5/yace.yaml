@@ -1,0 +1,55 @@
+apiVersion: v1alpha1
+sts-region: eu-west-2
+discovery:
+  jobs:
+    - type: AWS/RDS
+      regions:
+        - eu-west-2
+      period: 300
+      length: 600
+      search_tags:
+        - Key: Name
+          Value: cloud-week5*
+      metrics:
+        - name: CPUUtilization
+          statistics: [Average, Maximum]
+        - name: DatabaseConnections
+          statistics: [Sum]
+        - name: FreeableMemory
+          statistics: [Average, Minimum]
+        - name: FreeStorageSpace
+          statistics: [Average, Minimum]
+        - name: ReadThroughput
+          statistics: [Average, Sum]
+        - name: WriteThroughput
+          statistics: [Average, Sum]
+        - name: ReadLatency
+          statistics: [Maximum]
+        - name: WriteLatency
+          statistics: [Maximum]
+
+    - type: AWS/EC2
+      regions:
+        - eu-west-2
+      period: 300
+      length: 600
+      search_tags:
+        - Key: Name
+          Value: cloud-week5*
+      metrics:
+        - name: CPUUtilization
+          statistics: [Average, Maximum]
+        - name: NetworkIn
+          statistics: [Average, Sum]
+        - name: NetworkOut
+          statistics: [Average, Sum]
+        - name: NetworkPacketsIn
+          statistics: [Sum]
+        - name: NetworkPacketsOut
+          statistics: [Sum]
+        - name: StatusCheckFailed
+          statistics: [Sum]
+        - name: StatusCheckFailed_Instance
+          statistics: [Sum]
+        - name: StatusCheckFailed_System
+          statistics: [Sum]
