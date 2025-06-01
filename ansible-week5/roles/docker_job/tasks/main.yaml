@@ -1,0 +1,51 @@
+---
+- name: Run docker compose down and remove images
+  community.docker.docker_compose_v2:
+    project_src: /home/ubuntu
+    files:
+      - "{{ docker_compose_dest }}"
+    state: absent
+    remove_images: all
+
+- name: Run docker compose
+  ansible.builtin.shell: |
+    cd /home/ubuntu
+    docker compose -f {{ docker_compose_dest }} pull
+    docker compose -f {{ docker_compose_dest }} up -d
+  environment:
+    SERVER_PORT: "4000"
+    DATABASE_URL: "postgresql://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres"
+    RDS_USER: "{{ database_username }}"
+    RDS_PASS: "{{ database_password }}"
+    RDS_ENDPOINT: "{{ database_endpoint }}"
+
+- name: Get container IDs
+  ansible.builtin.command:
+    cmd: docker compose -f {{ docker_compose_dest }} ps -q
+  register: containerIds
+  changed_when: false
+
+- name: Wait for container to fully start
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Check and display Docker container logs
+  ansible.builtin.shell: |
+    echo "====== {{ item[:12] }} ======"
+    docker logs --tail 10 {{ item }}
+  loop: "{{ containerIds.stdout_lines }}"
+  loop_control:
+    label: "{{ item[:12] }}"
+  register: docker_logs_output
+  changed_when: false
+
+- name: Display Docker logs
+  ansible.builtin.debug:
+    msg: "{{ item.stdout_lines + item.stderr_lines }}"
+  loop: "{{ docker_logs_output.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Prune unused Docker images
+  ansible.builtin.command:
+    cmd: docker image prune -a -f

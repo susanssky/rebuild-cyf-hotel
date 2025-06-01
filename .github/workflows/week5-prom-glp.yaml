@@ -1,15 +1,16 @@
-name: Week5 Coursework with Prometheus, Grafana
+name: Week5 Coursework with Prometheus, Grafana, Loki, Pormtail
 permissions:
   id-token: write
   contents: read
-on:
-  project:
-    types: deleted
+on: push
+# on:
+#   project:
+#     types: deleted
 jobs:
   deploy:
     uses: ./.github/workflows/reusable-week5.yaml
     with:
-      ansible_playbook: ec2-prometheus.yaml
+      ansible_playbook: ec2-prom-glp.yaml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

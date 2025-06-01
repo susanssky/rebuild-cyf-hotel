@@ -1,0 +1,73 @@
+volumes:
+  app-logs:
+
+services:
+  backend:
+    image: susanssky/cyf-hotel-backend:latest
+    container_name: cyf-hotel-backend
+    volumes:
+      - app-logs:/logs
+    restart: always
+    ports:
+      - 4000:4000
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./grafana-week5/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./grafana-week5/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./grafana-week5/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana-week5/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - 3000:3000
+    depends_on:
+      - loki
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    ports:
+      - 9100:9100
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${RDS_USER}:${RDS_PASS}@${RDS_ENDPOINT}/postgres?sslmode=require"
+    ports:
+      - 9187:9187
+
+  yace:
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:latest
+    container_name: yace
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./grafana-week5/yace.yaml:/etc/yace/config.yml
+
+  loki:
+    image: grafana/loki:3.4.1
+    container_name: loki
+    ports:
+      - '3100:3100'
+
+  promtail:
+    image: grafana/promtail:3.4.1
+    container_name: promtail
+    volumes:
+      - ./grafana-week5/promtail-config.yaml:/etc/promtail/config.yml
+      - app-logs:/logs:ro
+    depends_on:
+      - loki
+      - backend
