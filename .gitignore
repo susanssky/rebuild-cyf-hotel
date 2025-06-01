@@ -29,3 +29,4 @@ yarn-error.log*
 **.env
 **.terraform
 tf-aws-ec2-key*
+/ansible*/vars.yaml

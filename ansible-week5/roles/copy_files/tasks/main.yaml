@@ -1,0 +1,19 @@
+---
+- name: Copy the sql file to EC2
+  ansible.builtin.copy:
+    src: ../database/seeding.sql
+    dest: seeding.sql
+
+- name: Copy the docker compose file to EC2
+  ansible.builtin.copy:
+    src: "{{ docker_compose_src }}"
+    dest: "{{ docker_compose_dest }}"
+
+- name: Copy grafana-week5 folder to home directory
+  ansible.builtin.copy:
+    src: ../grafana-week5/
+    dest: ./grafana-week5/
+
+- name: Run PostgreSQL seeding script
+  ansible.builtin.command:
+    cmd: psql postgresql://{{ database_username }}:{{ database_password }}@{{ database_endpoint }}/postgres -f seeding.sql

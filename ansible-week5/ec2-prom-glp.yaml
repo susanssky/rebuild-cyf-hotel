@@ -12,14 +12,14 @@
     - secret
     - copy_files
   vars:
-    docker_compose_src: ../docker-compose-week5-prom.yaml
-    docker_compose_dest: docker-compose-week5-prom.yaml
-    
+    docker_compose_src: ../docker-compose-week5-prom-glp.yaml
+    docker_compose_dest: docker-compose-week5-prom-glp.yaml
+
 - name: Set up docker
   hosts: aws_ec2
   become: yes
   roles:
     - docker_job
   vars:
-    docker_compose_src: ../docker-compose-week5-prom.yaml
-    docker_compose_dest: docker-compose-week5-prom.yaml
+    docker_compose_src: ../docker-compose-week5-prom-glp.yaml
+    docker_compose_dest: docker-compose-week5-prom-glp.yaml

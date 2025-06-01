@@ -1,16 +1,13 @@
 import express, { Express, Request, Response, NextFunction } from 'express'
-
 import 'dotenv/config'
-
 import { Client } from 'pg'
 import { ClientConfig } from './utils/clientConfig'
-
 import cors from 'cors'
-
 import customerRoutes from './routes/customers'
 import awsRoutes from './routes/aws'
-
 import promClient from 'prom-client'
+import { logger } from './utils/logger'
+
 
 const app: Express = express()
 
@@ -34,14 +31,14 @@ const httpRequestDuration = new promClient.Histogram({
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now()
   res.on('finish', () => {
-    const duration = (Date.now() - start) / 1000 
+    const duration = (Date.now() - start) / 1000
     const labels = {
       method: req.method,
       route: req.baseUrl || req.path,
       status_code: res.statusCode.toString(),
     }
-    httpRequestCounter.inc(labels) 
-    httpRequestDuration.observe(labels, duration) 
+    httpRequestCounter.inc(labels)
+    httpRequestDuration.observe(labels, duration)
   })
   next()
 })
@@ -57,18 +54,23 @@ export let client: Client | undefined
 
 if (process.env.DATABASE_URL) {
   client = new Client(ClientConfig)
-  client.connect().catch((err) => {
-    console.error('Failed to connect to database:', err)
-  })
+  client
+    .connect()
+    .then(() => {
+      logger.info('Successfully connected to database')
+    })
+    .catch((err) => {
+      logger.error('Failed to connect to database:', err)
+    })
 } else {
-  console.warn(
+  logger.warn(
     'DATABASE_URL is not set. Database operations will return empty array.'
   )
 }
 
-app.use('/', customerRoutes)
 app.use('/aws', awsRoutes)
+app.use('/', customerRoutes)
 
 app.listen(process.env.SERVER_PORT, () => {
-  console.log(`Server is listening on port ${process.env.SERVER_PORT}`)
+  logger.info(`Server is listening on port ${process.env.SERVER_PORT}`)
 })
