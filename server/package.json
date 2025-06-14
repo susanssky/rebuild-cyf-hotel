@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev src/server.ts",
     "build": "tsc",
-    "start": "tsc && node build/server.js"
+    "start": "tsc && cp src/utils/seeding.sql build/utils/ && node build/server.js"
   },
   "keywords": [],
   "author": "",

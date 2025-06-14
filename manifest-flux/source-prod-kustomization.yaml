@@ -1,0 +1,56 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: myapp-prod
+  namespace: flux-system
+spec:
+  interval: 10m
+  targetNamespace: flux-prod
+  sourceRef:
+    kind: GitRepository
+    name: myapp-source
+  path: "./manifest-k8s"
+  prune: true
+  timeout: 1m
+  patches:
+    - patch: |-
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backend
+        spec:
+          replicas: 3
+      target:
+        kind: Deployment
+        name: backend
+    - patch: |-
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: backend-secrets
+        spec:
+          data:
+          - secretKey: flux_prod_db_url
+            remoteRef:
+              key: flux-prod-db-url
+      target:
+        kind: ExternalSecret
+        name: backend-secrets
+    - patch: |-
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backend
+        spec:
+          template:
+            spec:
+              containers:
+              - name: backend
+                env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: flux_prod_db_url
+      target:
+        kind: Deployment
+        name: backend

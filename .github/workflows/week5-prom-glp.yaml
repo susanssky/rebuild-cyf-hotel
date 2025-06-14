@@ -2,10 +2,10 @@ name: Week5 Coursework with Prometheus, Grafana, Loki, Pormtail
 permissions:
   id-token: write
   contents: read
-on: push
-# on:
-#   project:
-#     types: deleted
+# on: push
+on:
+  project:
+    types: deleted
 jobs:
   deploy:
     uses: ./.github/workflows/reusable-week5.yaml

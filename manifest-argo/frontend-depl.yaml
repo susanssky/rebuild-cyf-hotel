@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      serviceAccountName: gke-workload-identity
+      containers:
+      - name: frontend
+        image: susanssky/cyf-hotel-frontend:latest
+        # resources:
+        #   requests:
+        #     memory: 200Mi
+        #     cpu: 200m
+        #   limits:
+        #     memory: 400Mi
+        #     cpu: 300m
+        ports:
+        - containerPort: 3000
+        env:
+        - name: VITE_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: frontend-secrets
+              key: server_url

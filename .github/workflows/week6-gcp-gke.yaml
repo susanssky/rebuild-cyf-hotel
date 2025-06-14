@@ -1,0 +1,191 @@
+name: Week6 Coursewrok with GCP, GKE
+permissions:
+  id-token: write
+  contents: read
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: 'Choose a deployment method'
+        required: true
+        default: 'default'
+        type: choice
+        options:
+          - default
+          - flux-prod
+          - argo-prod
+
+# default:   DOCKER -> VPC -> GKE -> MANIFEST -----------------> UPDATE_DNS
+# flux-prod: DOCKER -> VPC -> GKE -> EXTERNAL_SECRETS -> FLUX -> UPDATE_DNS
+# argo-prod: DOCKER -> VPC -> GKE -> EXTERNAL_SECRETS -> ARGO -> UPDATE_DNS
+
+jobs:
+  check-actor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restrict to repository owner
+        run: |
+          if [[ "${{ github.actor }}" != "susanssky" ]]; then
+            echo "Error: Only the repository owner susanssky can trigger this workflow."
+            exit 1
+          fi
+
+  DOCKER:
+    needs: [check-actor]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'server/**'
+            frontend:
+              - 'client/**'
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: steps.filter.outputs.frontend == 'true' || steps.filter.outputs.backend == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # run only if 'frontend' files were changed
+      - name: push frontend image
+        if: steps.filter.outputs.frontend == 'true'
+        run: |
+          docker build -f Dockerfile.frontend -t susanssky/devops:cyf-hotel-frontend .
+          docker push susanssky/devops:cyf-hotel-frontend
+
+      # run only if 'backend' files were changed
+      - name: push backend image
+        if: steps.filter.outputs.backend == 'true'
+        run: |
+          docker build -f Dockerfile.backend -t susanssky/devops:cyf-hotel-backend .
+          docker push susanssky/devops:cyf-hotel-backend
+
+  VPC:
+    needs: [DOCKER]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/1-vpc
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve
+
+  GKE:
+    needs: [VPC]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/2-gke
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "db_name=${{ secrets.DB_NAME }}" -var "db_user=${{ secrets.DB_USER }}" -var "db_pass=${{ secrets.DB_PASS }}" -var "db_url=${{ secrets.DB_URL }}" -var "flux_prod_db_url=${{ secrets.FLUX_PROD_DB_URL }}" -var "argo_prod_db_url=${{ secrets.ARGO_PROD_DB_URL }}" -var "server_url=${{ secrets.SERVER_URL }}"
+
+  MANIFEST:
+    needs: [GKE]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.method == 'default' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/3-manifests
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve
+
+  EXTERNAL_SECRETS:
+    needs: [GKE]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.method == 'flux-prod' || github.event.inputs.method == 'argo-prod' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/3-external-secrets
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve
+
+  FLUX:
+    needs: [EXTERNAL_SECRETS]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.method == 'flux-prod' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/3-fluxCD
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "github_token=${{ secrets.GH_TOKEN }}"
+
+  ARGO:
+    needs: [EXTERNAL_SECRETS]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.method == 'argo-prod' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/3-argoCD
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "github_token=${{ secrets.GH_TOKEN }}"
+
+  UPDATE_DNS:
+    needs: [MANIFEST, FLUX, ARGO]
+    if: |
+      always()
+      && contains(needs.*.result, 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: ${{ secrets.GCP_SA_GITHUB }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform command
+        working-directory: ./terraform-week6-GCP-GKE/4-updateDNS
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform apply -auto-approve -var "current_namespace=${{ github.event.inputs.method }}" -var "duckdns_token=${{ secrets.DUCKDNS_TOKEN }}"

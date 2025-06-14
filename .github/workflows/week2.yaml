@@ -22,16 +22,6 @@ jobs:
           aws-region: eu-west-2
       - name: Sync frontend files to S3
         run: aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
-      # - name: Remove existing files from AWS S3
-      #   run: |
-      #     aws s3 rm \
-      #     s3://${{ secrets.S3_BUCKET_NAME }} \
-      #     --recursive
-      # - name: Copy files to the test website with the AWS CLI
-      #   run: |
-      #     aws s3 cp \
-      #     ./dist s3://${{ secrets.S3_BUCKET_NAME }} \
-      #     --recursive
 
   ec2-deployment:
     runs-on: ubuntu-latest
